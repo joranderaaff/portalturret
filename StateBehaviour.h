@@ -114,7 +114,7 @@ void stateBehaviour() {
   }
   if(currentTurretMode == TurretMode::Automatic) {
   
-    bool motionDetected = digitalRead(D7) == HIGH;
+    bool motionDetected = isDetectingMotion();
     float zMovement = (smoothZ / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
     bool pickedUp = accelerometerBuffered && (zMovement < 8 || zMovement > 12);
     bool movedAround = accelerometerBuffered && (zMovement < 9.5 || zMovement > 10.5);
@@ -126,7 +126,7 @@ void stateBehaviour() {
     if(pickedUp && currentState != TurretState::PickedUp && currentState != TurretState::Shutdown && currentState != TurretState::Rebooting) {
       setState(TurretState::PickedUp);  
     }
-    
+    //Serial.printf("State: %d", currentState);
     switch(currentState) {
       case TurretState::Idle:
         if(motionDetected) {

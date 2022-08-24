@@ -1,0 +1,126 @@
+<html>
+
+<head>
+    <title>Portal Turret Setup</title>
+    <style>
+        html,
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #202225;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            margin: auto auto;
+            width: 350px;
+            text-align: center;
+        }
+
+        #wifi-container {
+            margin-bottom: 20px;
+        }
+
+        #setup-form {
+            background-color: #2f3136;
+            padding: 30px;
+            border-radius: 30px;
+            text-align: left;
+        }
+
+        label {
+            position: relative;
+            width: 100%;
+        }
+
+        .bssid {
+            display: inline-block;
+            margin-left: 5px;
+            color: #777777;
+            font-size: 12px;
+        }
+
+        input {
+            margin: 10px 0px;
+        }
+
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        input[type="submit"],
+        input[type="text"] {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <h1>Portal Turret Setup</h1>
+        <form id="setup-form" method="POST">
+            <label>Network:</label>
+            <div id="wifi-container">
+            </div>
+            <label>Password:</label>
+            <input id="password" name="pw" type="text" />
+            <input type="submit" value="Save" />
+        </form>
+        <script>
+            var passwordField = document.getElementById('password')
+            handleWifiClicked = function (e) {
+            }
+
+            getJSON = function (url, callback) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'json';
+                xhr.onload = function () {
+                    var status = xhr.status;
+                    if (status === 200) {
+                        callback(xhr.response);
+                    }
+                };
+                xhr.send();
+            };
+
+            var form = document.getElementById('setup-form');
+
+            form.setAttribute('action', window.location.origin + "/setup");
+
+            var container = document.getElementById('wifi-container');
+            var shownSSIDs = [];
+            getJSON(window.location.origin + "/scan", (data) => {
+                var i = 0;
+                data.forEach(wifi => {
+                    if (shownSSIDs.indexOf(wifi.ssid) < 0) {
+                        var item = document.createElement('div');
+                        var radio = document.createElement('input');
+                        radio.setAttribute('type', 'radio');
+                        radio.setAttribute('data-index', i);
+                        radio.setAttribute('id', wifi.ssid + i);
+                        radio.setAttribute('value', wifi.ssid);
+                        radio.setAttribute('name', 'ssid');
+                        radio.addEventListener('change', handleWifiClicked);
+                        var label = document.createElement('label');
+                        label.setAttribute('for', wifi.ssid + i);
+                        label.innerText = wifi.ssid;
+                        item.append(radio);
+                        item.append(label);
+                        i++;
+                        container.append(item);
+                        shownSSIDs.push(wifi.ssid);
+                    }
+                });
+            });
+
+        </script>
+    </div>
+</body>
+
+</html>
