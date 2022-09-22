@@ -1,11 +1,13 @@
-#define OPEN_DURATION 2300
+
 
 COROUTINE(openWingsRoutine) {
   COROUTINE_BEGIN();
   if (!isOpen()) {
+    fullyOpened = false;
     wingServo.write(STATIONARY_ANGLE - 90);
     COROUTINE_DELAY(OPEN_DURATION);
     wingServo.write(STATIONARY_ANGLE);
+    fullyOpened = true;
   }
   COROUTINE_END();
 }
@@ -14,8 +16,10 @@ COROUTINE(closeWingsRoutine) {
   COROUTINE_BEGIN();
   rotateServo.write(90);
   COROUTINE_DELAY(250);
+  fullyOpened = false;
   wingServo.write(STATIONARY_ANGLE + 90);
   COROUTINE_AWAIT(!isOpen());
+  COROUTINE_DELAY(CLOSE_STOP_DELAY);
   wingServo.write(STATIONARY_ANGLE);
   COROUTINE_END();
 }
@@ -45,9 +49,11 @@ COROUTINE(activatedRoutine) {
 
   if (closedAtStart) {
     if (!isOpen()) {
+      fullyOpened = false;
       wingServo.write(STATIONARY_ANGLE - 90);
       COROUTINE_DELAY(OPEN_DURATION);
       wingServo.write(STATIONARY_ANGLE);
+      fullyOpened = true;
     }
   }
 
@@ -76,7 +82,7 @@ COROUTINE(searchingRoutine) {
     }
     float t = millis() / 1000.0;
     uint16_t s = t * 255;
-    if (isOpen()) {
+    if (fullyOpened) {
       rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 30, 160));
     }
     COROUTINE_YIELD();
@@ -87,7 +93,7 @@ COROUTINE(searchingRoutine) {
 
 COROUTINE(engagingRoutine) {
   COROUTINE_BEGIN();
-  if (isOpen()) {
+  if (fullyOpened) {
 
     static unsigned long fromTime;
     static unsigned long toTime;
@@ -117,14 +123,14 @@ COROUTINE(engagingRoutine) {
     fromAngle = whatSide == 0 ? 30 : 160;
     toAngle = whatSide == 0 ? 160 : 30;
 
-    if (isOpen()) {
+    if (fullyOpened) {
       rotateServo.write(fromAngle);
     }
 
     COROUTINE_DELAY(200);
 
     while (toTime > millis()) {
-      if (isOpen()) {
+      if (fullyOpened) {
         rotateServo.write(map(millis(), fromTime, toTime, fromAngle, toAngle));
       }
       analogWrite(GUN_LEDS, 255);
@@ -154,8 +160,10 @@ COROUTINE(targetLostRoutine) {
 
   rotateServo.write(90);
   COROUTINE_DELAY(250);
+  fullyOpened = false;
   wingServo.write(STATIONARY_ANGLE + 90);
   COROUTINE_AWAIT(!isOpen());
+  COROUTINE_DELAY(CLOSE_STOP_DELAY);
   wingServo.write(STATIONARY_ANGLE);
 
   COROUTINE_END();
@@ -173,7 +181,7 @@ COROUTINE(pickedUpRoutine) {
   static unsigned long nextAudioClipTime = 0;
 
   while (true) {
-    if (isOpen()) {
+    if (fullyOpened) {
       float t = millis() / 1000.0 * 5.0;
       uint16_t s = t * 255;
       rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 30, 160));
@@ -207,8 +215,10 @@ COROUTINE(shutdownRoutine) {
 
   rotateServo.write(90);
   COROUTINE_DELAY(250);
+  fullyOpened = false;
   wingServo.write(STATIONARY_ANGLE + 90);
   COROUTINE_AWAIT(!isOpen());
+  COROUTINE_DELAY(CLOSE_STOP_DELAY);
   wingServo.write(STATIONARY_ANGLE);
 
   fromTime = t = millis();
@@ -271,7 +281,7 @@ COROUTINE(rebootRoutine) {
 
 COROUTINE(manualEngagingRoutine) {
   COROUTINE_BEGIN();
-  if (isOpen()) {
+  if (fullyOpened) {
 #ifdef USE_AUDIO
     if (isPlayingAudio()) {
       myDFPlayer.stop();
@@ -306,7 +316,7 @@ int currentRotateAngle = 90;
 COROUTINE(manualMovementRoutine) {
   COROUTINE_LOOP() {
     if (currentRotateDirection != 0) {
-      if (isOpen()) {
+      if (fullyOpened) {
         currentRotateAngle += currentRotateDirection;
         currentRotateAngle = constrain(currentRotateAngle, 30, 150);
         rotateServo.write(currentRotateAngle);

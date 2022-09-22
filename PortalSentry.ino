@@ -1,22 +1,34 @@
+//General
 #include "Arduino.h"
-#include "SoftwareSerial.h"
-#include "DFRobotDFPlayerMini.h"
-#include <Wire.h>
-#include <WiFiClientSecure.h>
+
+//Network
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h> // Include the mDNS library
+#include <ESP8266httpUpdate.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
-#include <FS.h>
-#include <FastLED.h>
-#include "LittleFS.h"
-#include <ESP8266mDNS.h> // Include the mDNS library
-#include <ESP8266httpUpdate.h>
 #include <ArduinoOTA.h>
-#include <AceRoutine.h>
 #include <AsyncElegantOTA.h>
+
+//Storage
+#include "LittleFS.h"
+
+//Routines
+#include <AceRoutine.h>
+
+//Devices
+#include <FastLED.h>
 #include <Servo.h>
+#include "SoftwareSerial.h"
+#include "DFRobotDFPlayerMini.h"
 
 using namespace ace_routine;
+
+//Tweak these according to servo speed
+#define OPEN_DURATION 2300
+#define CLOSE_STOP_DELAY 200
+
 
 #define WIFI_CRED_FILE "settings.txt"
 
@@ -61,6 +73,7 @@ unsigned long nextWebSocketUpdateTime = 0;
 
 bool wingsOpen;
 bool wasOpen;
+bool fullyOpened;
 bool alarm;
 bool needsSetup;
 bool myDFPlayerSetup = false;
@@ -70,8 +83,17 @@ bool isOpen() {
   return digitalRead(WING_SWITCH) == HIGH;
 }
 
+//For some reason we need to cache this value, as checking it every loop causes the webserver to freeze.
+//https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
+bool isDetectingMotionCached = false;
+unsigned long lastMotionCheck = 0;
 bool isDetectingMotion() {
-  return analogRead(A0) > 512;
+  unsigned long curMillis = millis();
+  if (curMillis > lastMotionCheck + 50) {
+    isDetectingMotionCached = analogRead(A0) > 512;
+    lastMotionCheck = curMillis;
+  }
+  return isDetectingMotionCached;
 }
 
 bool isPlayingAudio() {
@@ -84,6 +106,14 @@ bool isPlayingAudio() {
 
 bool isConnected;
 
+void UpdateLEDPreloader() {
+  int t = floor(millis() / 10);
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB((i + t) % 8 == 0 ? 255 : 0, 0, 0);
+    FastLED.show();
+  }
+}
+
 void setup()
 {
   Serial.begin(9600);
@@ -93,6 +123,13 @@ void setup()
     return;
   }
   Serial.println("LittleFS Initialized");
+
+  FastLED.addLeds<WS2812, RING_LEDS, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(84);
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(0, 0, 0);
+    FastLED.show();
+  }
 
   pinMode(GUN_LEDS, OUTPUT);
 
@@ -105,9 +142,8 @@ void setup()
   File wifiCreds = LittleFS.open(WIFI_CRED_FILE, "r");
   String esid = wifiCreds.readStringUntil('\r'); wifiCreds.read();
   String epass = wifiCreds.readStringUntil('\r'); wifiCreds.read();
-
-
-  WiFi.hostname("Turret");
+  
+  WiFi.hostname("turret");
   WiFi.mode(WIFI_STA);
   WiFi.begin(esid, epass);
 
@@ -115,7 +151,8 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("Starting wifi");
-    delay(1000);
+    UpdateLEDPreloader();
+    delay(50);
     if (m + 10000 < millis()) {
       WiFi.disconnect();
       break;
@@ -144,18 +181,8 @@ void setup()
     Serial.println(WiFi.localIP());
     delay(500);
   }
-
-  Serial.println("Begin MDNS");
-  MDNS.begin("portal");
-  MDNS.addService("http", "tcp", 80);
-  MDNS.addService("http", "tcp", 81);
-
-  FastLED.addLeds<WS2812, RING_LEDS, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(84);
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB(0, 0, 0);
-    FastLED.show();
-  }
+  
+  UpdateLEDPreloader();
 
   currentState = TurretState::Idle;
   currentManualState = ManualState::Idle;
@@ -164,12 +191,27 @@ void setup()
   wasOpen = isOpen();
 
   AsyncElegantOTA.begin(&server);
+  
+  UpdateLEDPreloader();
 
   startWebServer();
   startWebSocket();
   setupAccelerometer();
+  
+  UpdateLEDPreloader();
 
-  //Serial.end();
+  Serial.println("Begin MDNS");
+  if (MDNS.begin("turret", WiFi.localIP())) {
+    Serial.println("MDSN setup");
+    MDNS.addService("http", "tcp", 80);
+    MDNS.addService("http", "tcp", 81);
+  } else {
+    Serial.println("MDSN failed");
+  }
+  delay(200);
+  Serial.end();
+  
+  UpdateLEDPreloader();
 
 #ifdef USE_AUDIO
   mySoftwareSerial.begin(9600);
@@ -177,6 +219,8 @@ void setup()
   myDFPlayerSetup = myDFPlayer.begin(mySoftwareSerial);
   if (myDFPlayerSetup) myDFPlayer.volume(15);
 #endif
+  
+  UpdateLEDPreloader();
 
   ArduinoOTA.onStart([]() {
     String type;
@@ -209,6 +253,7 @@ void setup()
       //Serial.println("End Failed");
     }
   });
+  ArduinoOTA.setHostname("turret");
   ArduinoOTA.begin();
 
   for (int i = 0; i < NUM_LEDS; i++)
@@ -228,20 +273,20 @@ void preloader(uint8_t led) {
 
 void loop()
 {
+  MDNS.update();
   //if (!isConnected) return;
 
   wingsOpen = isOpen();
 
   ArduinoOTA.handle();
   webSocket.loop();
-  MDNS.update();
-
   stateBehaviour();
   //This helps the webserver function when AceRoutines are running..?
-  delay(10);
+  //delay(10);
 
   if (currentMoveSpeed > 0 && wasOpen && !wingsOpen) {
     currentMoveSpeed = 0;
+    delay(CLOSE_STOP_DELAY);
     wingServo.write(STATIONARY_ANGLE);
   }
 

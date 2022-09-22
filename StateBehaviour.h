@@ -28,32 +28,36 @@ unsigned long stateStartTime = 0;
 unsigned long lastMovementTime = 0;
 
 void setState(TurretState nextState) {
-  if(currentTurretMode == TurretMode::Automatic) {
-    switch(nextState) {
+
+  //Stop the Wing Servos just in case;
+  wingServo.write(STATIONARY_ANGLE);
+  
+  if (currentTurretMode == TurretMode::Automatic) {
+    switch (nextState) {
       case TurretState::Activated:
-          activatedRoutine.reset();
-      break;
+        activatedRoutine.reset();
+        break;
       case TurretState::Engaging:
-          engagingRoutine.reset();
-      break;
+        engagingRoutine.reset();
+        break;
       case TurretState::Searching:
-          searchingRoutine.reset();
-      break;
+        searchingRoutine.reset();
+        break;
       case TurretState::TargetLost:
-          targetLostRoutine.reset();
-      break;
+        targetLostRoutine.reset();
+        break;
       case TurretState::PickedUp:
-          pickedUpRoutine.reset();
-      break;
+        pickedUpRoutine.reset();
+        break;
       case TurretState::Shutdown:
-          shutdownRoutine.reset();
-      break;
+        shutdownRoutine.reset();
+        break;
       case TurretState::ManualEngaging:
-          manualEngagingRoutine.reset();
-      break;
+        manualEngagingRoutine.reset();
+        break;
       case TurretState::Rebooting:
-          rebootRoutine.reset();
-      break;
+        rebootRoutine.reset();
+        break;
     }
     stateStartTime = millis();
     currentState = nextState;
@@ -61,17 +65,22 @@ void setState(TurretState nextState) {
 }
 
 void setManualState(ManualState nextState) {
-  if(currentTurretMode == TurretMode::Manual) {
-    switch(nextState) {
+
+  //Stop the Wing Servos just in case;
+  wingServo.write(STATIONARY_ANGLE);
+
+  
+  if (currentTurretMode == TurretMode::Manual) {
+    switch (nextState) {
       case ManualState::Opening:
-          openWingsRoutine.reset();
-      break;
+        openWingsRoutine.reset();
+        break;
       case ManualState::Closing:
-          closeWingsRoutine.reset();
-      break;
+        closeWingsRoutine.reset();
+        break;
       case ManualState::Firing:
-          manualEngagingRoutine.reset();
-      break;
+        manualEngagingRoutine.reset();
+        break;
     }
     currentManualState = nextState;
   }
@@ -80,115 +89,114 @@ void setManualState(ManualState nextState) {
 void manualRotation(unsigned long deltaTime) {
   manualMovementRoutine.runCoroutine();
 }
-
 void stateBehaviour() {
-    
+
   unsigned long deltaTime = millis() - previousTime;
   previousTime = millis();
 
-  if(currentTurretMode == TurretMode::Manual) {
-    switch(currentManualState) {
+  if (currentTurretMode == TurretMode::Manual) {
+    switch (currentManualState) {
       case ManualState::Idle:
         manualRotation(deltaTime);
         break;
       case ManualState::Opening:
         openWingsRoutine.runCoroutine();
-        if(openWingsRoutine.isDone()) {
+        if (openWingsRoutine.isDone()) {
           setManualState(ManualState::Idle);
         }
         break;
       case ManualState::Closing:
         closeWingsRoutine.runCoroutine();
-        if(closeWingsRoutine.isDone()) {
+        if (closeWingsRoutine.isDone()) {
           setManualState(ManualState::Idle);
         }
         break;
       case ManualState::Firing:
         manualRotation(deltaTime);
         manualEngagingRoutine.runCoroutine();
-        if(manualEngagingRoutine.isDone()) {
+        if (manualEngagingRoutine.isDone()) {
           setManualState(ManualState::Idle);
         }
         break;
     }
   }
-  if(currentTurretMode == TurretMode::Automatic) {
-  
+  if (currentTurretMode == TurretMode::Automatic) {
+    
     bool motionDetected = isDetectingMotion();
     float zMovement = (smoothZ / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
     bool pickedUp = accelerometerBuffered && (zMovement < 8 || zMovement > 12);
     bool movedAround = accelerometerBuffered && (zMovement < 9.5 || zMovement > 10.5);
     bool onItsSide = accelerometerBuffered && (zMovement < 5);
-    if(movedAround) {
+    
+    if (movedAround) {
       lastMovementTime = millis();
     }
-    
-    if(pickedUp && currentState != TurretState::PickedUp && currentState != TurretState::Shutdown && currentState != TurretState::Rebooting) {
-      setState(TurretState::PickedUp);  
+
+    if (pickedUp && currentState != TurretState::PickedUp && currentState != TurretState::Shutdown && currentState != TurretState::Rebooting) {
+      setState(TurretState::PickedUp);
     }
-    //Serial.printf("State: %d", currentState);
-    switch(currentState) {
+    switch (currentState) {
       case TurretState::Idle:
-        if(motionDetected) {
+        if (motionDetected) {
           setState(TurretState::Activated);
         }
-      break;
+        break;
       case TurretState::Activated:
         activatedRoutine.runCoroutine();
-        if(activatedRoutine.isDone()) {
-          if(motionDetected) {
-            setState(TurretState::Engaging); 
+        if (activatedRoutine.isDone()) {
+          if (motionDetected) {
+            setState(TurretState::Engaging);
           } else {
             setState(TurretState::Searching);
           }
         }
-      break;
+        break;
       case TurretState::Searching:
         searchingRoutine.runCoroutine();
-        if(millis() > stateStartTime + 10000) {
+        if (millis() > stateStartTime + 10000) {
           setState(TurretState::TargetLost);
         }
-        if(motionDetected && millis() > stateStartTime + 100) {
+        if (motionDetected && millis() > stateStartTime + 100) {
           setState(TurretState::Engaging);
         }
-      break;
+        break;
       case TurretState::TargetLost:
         targetLostRoutine.runCoroutine();
-        if(targetLostRoutine.isDone()) {
+        if (targetLostRoutine.isDone()) {
           setState(TurretState::Idle);
         }
-      break;
+        break;
       case TurretState::Engaging:
         engagingRoutine.runCoroutine();
-        if(engagingRoutine.isDone()) {
-          if(wingsOpen) {
+        if (engagingRoutine.isDone()) {
+          if (wingsOpen) {
             setState(TurretState::Searching);
           } else {
             setState(TurretState::Idle);
           }
         }
-      break;
+        break;
       case TurretState::PickedUp:
         pickedUpRoutine.runCoroutine();
-        if(onItsSide) {
+        if (onItsSide) {
           setState(TurretState::Shutdown);
         }
-        else if(!movedAround && millis() > lastMovementTime + 5000) {
+        else if (!movedAround && millis() > lastMovementTime + 5000) {
           setState(TurretState::Activated);
         }
-      break;
+        break;
       case TurretState::Shutdown:
         shutdownRoutine.runCoroutine();
-        if(shutdownRoutine.isDone() && !onItsSide) {
+        if (shutdownRoutine.isDone() && !onItsSide) {
           setState(TurretState::Rebooting);
         }
-      break;
+        break;
       case TurretState::Rebooting:
         rebootRoutine.runCoroutine();
-        if(rebootRoutine.isDone()) {
+        if (rebootRoutine.isDone()) {
           setState(TurretState::Idle);
         }
-      break;
+        break;
     }
   }
 }
