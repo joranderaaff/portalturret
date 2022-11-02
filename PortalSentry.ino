@@ -26,8 +26,9 @@
 using namespace ace_routine;
 
 //Tweak these according to servo speed
-#define OPEN_DURATION 2300
-#define CLOSE_STOP_DELAY 200
+#define OPEN_DURATION 1000
+#define CLOSE_STOP_DELAY 100
+#define MAX_ROTATION 50
 
 
 #define WIFI_CRED_FILE "settings.txt"
@@ -69,6 +70,7 @@ AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 bool websocketStarted;
+bool diagnoseMode = false;
 unsigned long nextWebSocketUpdateTime = 0;
 
 bool wingsOpen;
@@ -78,6 +80,7 @@ bool alarm;
 bool needsSetup;
 bool myDFPlayerSetup = false;
 bool shouldUpdate = false;
+int diagnoseAction = -1;
 
 bool isOpen() {
   return digitalRead(WING_SWITCH) == HIGH;
@@ -116,6 +119,7 @@ void UpdateLEDPreloader() {
 
 void setup()
 {
+
   Serial.begin(9600);
   // Initialize LittleFS
   if (!LittleFS.begin()) {
@@ -136,13 +140,16 @@ void setup()
   wingServo.attach(SERVO_A);
   rotateServo.attach(SERVO_B);
 
+  wingServo.write(90);
+  delay(10000);
+
   pinMode(BUSY, INPUT);
   pinMode(WING_SWITCH, INPUT_PULLUP);
 
   File wifiCreds = LittleFS.open(WIFI_CRED_FILE, "r");
   String esid = wifiCreds.readStringUntil('\r'); wifiCreds.read();
   String epass = wifiCreds.readStringUntil('\r'); wifiCreds.read();
-  
+
   WiFi.hostname("turret");
   WiFi.mode(WIFI_STA);
   WiFi.begin(esid, epass);
@@ -181,7 +188,7 @@ void setup()
     Serial.println(WiFi.localIP());
     delay(500);
   }
-  
+
   UpdateLEDPreloader();
 
   currentState = TurretState::Idle;
@@ -191,13 +198,13 @@ void setup()
   wasOpen = isOpen();
 
   AsyncElegantOTA.begin(&server);
-  
+
   UpdateLEDPreloader();
 
   startWebServer();
   startWebSocket();
   setupAccelerometer();
-  
+
   UpdateLEDPreloader();
 
   Serial.println("Begin MDNS");
@@ -210,7 +217,7 @@ void setup()
   }
   delay(200);
   Serial.end();
-  
+
   UpdateLEDPreloader();
 
 #ifdef USE_AUDIO
@@ -219,7 +226,7 @@ void setup()
   myDFPlayerSetup = myDFPlayer.begin(mySoftwareSerial);
   if (myDFPlayerSetup) myDFPlayer.volume(15);
 #endif
-  
+
   UpdateLEDPreloader();
 
   ArduinoOTA.onStart([]() {
@@ -280,9 +287,54 @@ void loop()
 
   ArduinoOTA.handle();
   webSocket.loop();
-  stateBehaviour();
-  //This helps the webserver function when AceRoutines are running..?
-  //delay(10);
+  if (!diagnoseMode) {
+    stateBehaviour();
+  } else {
+    switch (diagnoseAction) {
+      case 0:
+        wingServo.write(STATIONARY_ANGLE - 90);
+        delay(250);
+        wingServo.write(STATIONARY_ANGLE);
+        break;
+      case 1:
+        wingServo.write(STATIONARY_ANGLE + 90);
+        delay(250);
+        wingServo.write(STATIONARY_ANGLE);
+        break;
+      case 2:
+        rotateServo.write(50);
+        delay(1000);
+        rotateServo.write(90);
+        break;
+      case 3:
+        rotateServo.write(130);
+        delay(1000);
+        rotateServo.write(90);
+        break;
+      case 4:
+        analogWrite(GUN_LEDS, 255);
+        delay(1000);
+        analogWrite(GUN_LEDS, 0);
+        break;
+      case 5:
+        fill_solid(leds, NUM_LEDS, CRGB::Red);
+        FastLED.show();
+        delay(1000);
+        fill_solid(leds, NUM_LEDS, CRGB::Green);
+        FastLED.show();
+        delay(1000);
+        fill_solid(leds, NUM_LEDS, CRGB::Blue);
+        FastLED.show();
+        delay(1000);
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
+        FastLED.show();
+        break;
+      case 6:
+        myDFPlayer.playFolder(1, random(1, 9));
+        break;
+    }
+    diagnoseAction = -1;
+  }
 
   if (currentMoveSpeed > 0 && wasOpen && !wingsOpen) {
     currentMoveSpeed = 0;

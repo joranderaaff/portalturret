@@ -83,7 +83,7 @@ COROUTINE(searchingRoutine) {
     float t = millis() / 1000.0;
     uint16_t s = t * 255;
     if (fullyOpened) {
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 30, 160));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - MAX_ROTATION, 90 + MAX_ROTATION));
     }
     COROUTINE_YIELD();
   }
@@ -120,8 +120,8 @@ COROUTINE(engagingRoutine) {
     toTime = fromTime + 1200;
 
     int whatSide = random(0, 2);
-    fromAngle = whatSide == 0 ? 30 : 160;
-    toAngle = whatSide == 0 ? 160 : 30;
+    fromAngle = whatSide == 0 ? 90 - MAX_ROTATION : 90 + MAX_ROTATION;
+    toAngle = whatSide == 0 ? 90 + MAX_ROTATION : 90 - MAX_ROTATION;
 
     if (fullyOpened) {
       rotateServo.write(fromAngle);
@@ -184,7 +184,7 @@ COROUTINE(pickedUpRoutine) {
     if (fullyOpened) {
       float t = millis() / 1000.0 * 5.0;
       uint16_t s = t * 255;
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 30, 160));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - MAX_ROTATION, 90 + MAX_ROTATION));
     }
 #ifdef USE_AUDIO
     if (millis() > nextAudioClipTime) {
@@ -318,7 +318,7 @@ COROUTINE(manualMovementRoutine) {
     if (currentRotateDirection != 0) {
       if (fullyOpened) {
         currentRotateAngle += currentRotateDirection;
-        currentRotateAngle = constrain(currentRotateAngle, 30, 150);
+        currentRotateAngle = constrain(currentRotateAngle, 90 - MAX_ROTATION, 90 + MAX_ROTATION);
         rotateServo.write(currentRotateAngle);
       }
     }

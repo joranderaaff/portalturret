@@ -98,6 +98,25 @@ void startWebServer()
     }
   });
 
+  server.on("/diagnose", HTTP_GET, [](AsyncWebServerRequest * request) {
+    diagnoseMode = true;
+    request->send(LittleFS, "/diagnose.html", String(), false, processor);
+  });
+
+  server.on("/diagnose", HTTP_POST, [](AsyncWebServerRequest * request)
+  {
+    if (request->hasParam("action", true))
+    {
+      AsyncWebParameter *stateParam = request->getParam("action", true);
+      diagnoseAction = stateParam->value().toInt();
+      request->send(200, "text/html", "Diagnose");
+    }
+    else
+    {
+      request->send(200, "text/html", "No Action Sent");
+    }
+  });
+
   server.on("/set_open", HTTP_POST, [](AsyncWebServerRequest * request) {
     if (currentTurretMode == TurretMode::Manual) {
       if (request->hasParam("open", true))
