@@ -141,7 +141,7 @@ void setup()
   rotateServo.attach(SERVO_B);
 
   wingServo.write(90);
-  delay(10000);
+  delay(500);
 
   pinMode(BUSY, INPUT);
   pinMode(WING_SWITCH, INPUT_PULLUP);
