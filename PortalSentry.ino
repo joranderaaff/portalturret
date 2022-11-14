@@ -48,6 +48,12 @@ using namespace ace_routine;
 #define STATIONARY_ANGLE 90
 #define NUM_LEDS 8
 
+#define GFORCE_PICKED_UP_MIN 8
+#define GFORCE_PICKED_UP_MAX 12
+#define GFORCE_STEADY_MIN 9.5
+#define GFORCE_STEADY_MAX 10.5
+#define TIPPED_OVER_Z_TRESHOLD 5
+
 CRGB leds[NUM_LEDS];
 
 enum class TurretMode {
@@ -140,8 +146,15 @@ void setup()
   wingServo.attach(SERVO_A);
   rotateServo.attach(SERVO_B);
 
-  wingServo.write(90);
-  delay(500);
+  rotateServo.write(90);
+  delay(250);
+  fullyOpened = false;
+  wingServo.write(STATIONARY_ANGLE + 90);
+  while(isOpen()) {
+    delay(10);
+  }
+  delay(CLOSE_STOP_DELAY);
+  wingServo.write(STATIONARY_ANGLE);
 
   pinMode(BUSY, INPUT);
   pinMode(WING_SWITCH, INPUT_PULLUP);

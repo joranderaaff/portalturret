@@ -124,9 +124,9 @@ void stateBehaviour() {
     
     bool motionDetected = isDetectingMotion();
     float zMovement = (smoothZ / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
-    bool pickedUp = accelerometerBuffered && (zMovement < 8 || zMovement > 12);
-    bool movedAround = accelerometerBuffered && (zMovement < 9.5 || zMovement > 10.5);
-    bool onItsSide = accelerometerBuffered && (zMovement < 5);
+    bool pickedUp = accelerometerBuffered && (zMovement < GFORCE_PICKED_UP_MIN || zMovement > GFORCE_PICKED_UP_MAX);
+    bool movedAround = accelerometerBuffered && (zMovement < GFORCE_STEADY_MIN || zMovement > GFORCE_STEADY_MAX);
+    bool onItsSide = accelerometerBuffered && (zMovement < TIPPED_OVER_Z_TRESHOLD);
     
     if (movedAround) {
       lastMovementTime = millis();
