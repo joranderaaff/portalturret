@@ -1,4 +1,4 @@
-void startWebSocket()
+void StartWebSocket()
 {
   // Start a WebSocket server
   webSocket.begin();

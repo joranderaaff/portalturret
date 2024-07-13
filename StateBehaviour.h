@@ -30,8 +30,8 @@ unsigned long lastMovementTime = 0;
 void setState(TurretState nextState) {
 
   //Stop the Wing Servos just in case;
-  wingServo.write(STATIONARY_ANGLE);
-  
+  wingServo.write(settings.idleAngle);
+
   if (currentTurretMode == TurretMode::Automatic) {
     switch (nextState) {
       case TurretState::Activated:
@@ -67,9 +67,9 @@ void setState(TurretState nextState) {
 void setManualState(ManualState nextState) {
 
   //Stop the Wing Servos just in case;
-  wingServo.write(STATIONARY_ANGLE);
+  wingServo.write(settings.idleAngle);
 
-  
+
   if (currentTurretMode == TurretMode::Manual) {
     switch (nextState) {
       case ManualState::Opening:
@@ -121,13 +121,17 @@ void stateBehaviour() {
     }
   }
   if (currentTurretMode == TurretMode::Automatic) {
-    
+
     bool motionDetected = isDetectingMotion();
+
     float zMovement = (smoothZ / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
-    bool pickedUp = accelerometerBuffered && (zMovement < GFORCE_PICKED_UP_MIN || zMovement > GFORCE_PICKED_UP_MAX);
-    bool movedAround = accelerometerBuffered && (zMovement < GFORCE_STEADY_MIN || zMovement > GFORCE_STEADY_MAX);
-    bool onItsSide = accelerometerBuffered && (zMovement < TIPPED_OVER_Z_TRESHOLD);
-    
+    float xMovement = (smoothX / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
+    float yMovement = (smoothY / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
+
+    bool pickedUp = accelerometerBuffered && (xMovement < -settings.panicTreshold || xMovement > settings.panicTreshold || yMovement < -settings.panicTreshold || yMovement > settings.panicTreshold);
+    bool movedAround = accelerometerBuffered && (xMovement < -settings.restTreshold || xMovement > settings.restTreshold || yMovement < -settings.restTreshold || yMovement > settings.restTreshold);
+    bool onItsSide = accelerometerBuffered && (zMovement < settings.tippedOverTreshold);
+
     if (movedAround) {
       lastMovementTime = millis();
     }
@@ -180,8 +184,7 @@ void stateBehaviour() {
         pickedUpRoutine.runCoroutine();
         if (onItsSide) {
           setState(TurretState::Shutdown);
-        }
-        else if (!movedAround && millis() > lastMovementTime + 5000) {
+        } else if (!movedAround && millis() > lastMovementTime + 5000) {
           setState(TurretState::Activated);
         }
         break;

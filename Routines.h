@@ -1,26 +1,26 @@
-
-
 COROUTINE(openWingsRoutine) {
   COROUTINE_BEGIN();
   if (!isOpen()) {
     fullyOpened = false;
-    wingServo.write(STATIONARY_ANGLE - 90);
-    COROUTINE_DELAY(OPEN_DURATION);
-    wingServo.write(STATIONARY_ANGLE);
+    wingServo.write(settings.idleAngle - 90);
+    COROUTINE_DELAY(settings.openDuration);
+    wingServo.write(settings.idleAngle);
     fullyOpened = true;
   }
   COROUTINE_END();
 }
 
 COROUTINE(closeWingsRoutine) {
+  static unsigned long startTime;
   COROUTINE_BEGIN();
   rotateServo.write(90);
   COROUTINE_DELAY(250);
   fullyOpened = false;
-  wingServo.write(STATIONARY_ANGLE + 90);
-  COROUTINE_AWAIT(!isOpen());
+  startTime = millis();
+  wingServo.write(settings.idleAngle + 90);
+  COROUTINE_AWAIT(!isOpen() || millis() > startTime + 2000);
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
-  wingServo.write(STATIONARY_ANGLE);
+  wingServo.write(settings.idleAngle);
   COROUTINE_END();
 }
 
@@ -50,9 +50,9 @@ COROUTINE(activatedRoutine) {
   if (closedAtStart) {
     if (!isOpen()) {
       fullyOpened = false;
-      wingServo.write(STATIONARY_ANGLE - 90);
-      COROUTINE_DELAY(OPEN_DURATION);
-      wingServo.write(STATIONARY_ANGLE);
+      wingServo.write(settings.idleAngle - 90);
+      COROUTINE_DELAY(settings.openDuration);
+      wingServo.write(settings.idleAngle);
       fullyOpened = true;
     }
   }
@@ -83,7 +83,7 @@ COROUTINE(searchingRoutine) {
     float t = millis() / 1000.0;
     uint16_t s = t * 255;
     if (fullyOpened) {
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - MAX_ROTATION, 90 + MAX_ROTATION));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - settings.maxRotation, 90 + settings.maxRotation));
     }
     COROUTINE_YIELD();
   }
@@ -93,35 +93,35 @@ COROUTINE(searchingRoutine) {
 
 COROUTINE(engagingRoutine) {
   COROUTINE_BEGIN();
-  if (fullyOpened) {
 
-    static unsigned long fromTime;
-    static unsigned long toTime;
-    static int fromAngle;
-    static int toAngle;
+  static unsigned long fromTime;
+  static unsigned long toTime;
+  static int fromAngle;
+  static int toAngle;
 
-    fromTime = millis();
+  fromTime = millis();
 #ifdef USE_AUDIO
-    if (isPlayingAudio()) {
-      myDFPlayer.stop();
-      COROUTINE_AWAIT(!isPlayingAudio());
-    }
-    myDFPlayer.playFolder(9, 13);
-#endif
-    alarm = true;
-    fromTime = millis();
-#ifdef USE_AUDIO
-    COROUTINE_AWAIT(isPlayingAudio() || (!isPlayingAudio() && millis() > fromTime + 1000));
+  if (isPlayingAudio()) {
+    myDFPlayer.stop();
     COROUTINE_AWAIT(!isPlayingAudio());
-    myDFPlayer.playFolder(9, 8);
+  }
+  myDFPlayer.playFolder(9, 13);
 #endif
-    alarm = false;
-    fromTime = millis();
-    toTime = fromTime + 1200;
+  alarm = true;
+  fromTime = millis();
+#ifdef USE_AUDIO
+  COROUTINE_AWAIT(isPlayingAudio() || (!isPlayingAudio() && millis() > fromTime + 1000));
+  COROUTINE_AWAIT(!isPlayingAudio());
+  myDFPlayer.playFolder(9, 8);
+#endif
+  alarm = false;
+  fromTime = millis();
+  toTime = fromTime + 1200;
 
+  if (fullyOpened) {
     int whatSide = random(0, 2);
-    fromAngle = whatSide == 0 ? 90 - MAX_ROTATION : 90 + MAX_ROTATION;
-    toAngle = whatSide == 0 ? 90 + MAX_ROTATION : 90 - MAX_ROTATION;
+    fromAngle = whatSide == 0 ? 90 - settings.maxRotation : 90 + settings.maxRotation;
+    toAngle = whatSide == 0 ? 90 + settings.maxRotation : 90 - settings.maxRotation;
 
     if (fullyOpened) {
       rotateServo.write(fromAngle);
@@ -138,7 +138,6 @@ COROUTINE(engagingRoutine) {
       analogWrite(GUN_LEDS, 0);
       COROUTINE_DELAY(15);
     }
-
   }
   COROUTINE_END();
 }
@@ -161,10 +160,10 @@ COROUTINE(targetLostRoutine) {
   rotateServo.write(90);
   COROUTINE_DELAY(250);
   fullyOpened = false;
-  wingServo.write(STATIONARY_ANGLE + 90);
+  wingServo.write(settings.idleAngle + 90);
   COROUTINE_AWAIT(!isOpen());
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
-  wingServo.write(STATIONARY_ANGLE);
+  wingServo.write(settings.idleAngle);
 
   COROUTINE_END();
 }
@@ -184,7 +183,7 @@ COROUTINE(pickedUpRoutine) {
     if (fullyOpened) {
       float t = millis() / 1000.0 * 5.0;
       uint16_t s = t * 255;
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - MAX_ROTATION, 90 + MAX_ROTATION));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - settings.maxRotation, 90 + settings.maxRotation));
     }
 #ifdef USE_AUDIO
     if (millis() > nextAudioClipTime) {
@@ -202,8 +201,9 @@ COROUTINE(shutdownRoutine) {
   COROUTINE_BEGIN();
 
   static unsigned long fromTime;
-  static unsigned long toTime;;
+  static unsigned long toTime;
   static unsigned long t;
+  static unsigned long closingStartTime;
 #ifdef USE_AUDIO
   if (isPlayingAudio()) {
     myDFPlayer.stop();
@@ -216,10 +216,11 @@ COROUTINE(shutdownRoutine) {
   rotateServo.write(90);
   COROUTINE_DELAY(250);
   fullyOpened = false;
-  wingServo.write(STATIONARY_ANGLE + 90);
-  COROUTINE_AWAIT(!isOpen());
+  wingServo.write(settings.idleAngle + 90);
+  closingStartTime = millis();
+  COROUTINE_AWAIT(!isOpen() || millis() > closingStartTime + 2000);
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
-  wingServo.write(STATIONARY_ANGLE);
+  wingServo.write(settings.idleAngle);
 
   fromTime = t = millis();
   toTime = fromTime + 2000;
@@ -231,8 +232,7 @@ COROUTINE(shutdownRoutine) {
 
     analogWrite(CENTER_LED, red);
 
-    for (int i = 0; i < NUM_LEDS; i++)
-    {
+    for (int i = 0; i < NUM_LEDS; i++) {
       leds[i] = CRGB(red, 0, 0);
       FastLED.show();
     }
@@ -252,7 +252,8 @@ COROUTINE(rebootRoutine) {
   COROUTINE_BEGIN();
 
   static unsigned long fromTime;
-  static unsigned long toTime;;
+  static unsigned long toTime;
+  ;
   static unsigned long t;
 
   COROUTINE_DELAY(1000);
@@ -265,8 +266,7 @@ COROUTINE(rebootRoutine) {
     uint16_t s = (t / 1000.0 * 15.0) * 255;
     uint8_t red = map(t, fromTime, toTime, 0, 255);
     analogWrite(CENTER_LED, red);
-    for (int i = 0; i < NUM_LEDS; i++)
-    {
+    for (int i = 0; i < NUM_LEDS; i++) {
       leds[i] = CRGB(red, 0, 0);
       FastLED.show();
     }
@@ -318,7 +318,7 @@ COROUTINE(manualMovementRoutine) {
     if (currentRotateDirection != 0) {
       if (fullyOpened) {
         currentRotateAngle += currentRotateDirection;
-        currentRotateAngle = constrain(currentRotateAngle, 90 - MAX_ROTATION, 90 + MAX_ROTATION);
+        currentRotateAngle = constrain(currentRotateAngle, 90 - settings.maxRotation, 90 + settings.maxRotation);
         rotateServo.write(currentRotateAngle);
       }
     }

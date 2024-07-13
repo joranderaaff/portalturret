@@ -3,7 +3,7 @@
 
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
 
-const int measurements = 5;
+const int measurements = 10;
 int currentMeasurement = 0;
 bool accelerometerBuffered = false;
 int16_t accelX[measurements];
@@ -13,11 +13,11 @@ int32_t smoothX = 0;
 int32_t smoothY = 0;
 int32_t smoothZ = 0;
 
-void setupAccelerometer() {
+void SetupAccelerometer() {
   accel.begin();
 }
 
-void updateAccelerometer() {
+void UpdateAccelerometer() {
     sensors_event_t event;
     accel.getEvent(&event);
 

@@ -3,7 +3,6 @@
 
 //Network
 #include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h> // Include the mDNS library
 #include <ESP8266httpUpdate.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -23,15 +22,12 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
+#include "Settings.h"
+
 using namespace ace_routine;
 
 //Tweak these according to servo speed
-#define OPEN_DURATION 1000
 #define CLOSE_STOP_DELAY 100
-#define MAX_ROTATION 50
-
-
-#define WIFI_CRED_FILE "settings.txt"
 
 #define USE_AUDIO 1
 
@@ -39,20 +35,14 @@ using namespace ace_routine;
 #define CENTER_LED D3
 #define GUN_LEDS D4
 #define RING_LEDS D8
-#define SERVO_A D6
-#define SERVO_B D7
 #define WING_SWITCH D5
 #define PID A0
 
-#define CENTER_ANGLE 90
-#define STATIONARY_ANGLE 90
 #define NUM_LEDS 8
 
-#define GFORCE_PICKED_UP_MIN 8
-#define GFORCE_PICKED_UP_MAX 12
-#define GFORCE_STEADY_MIN 9.5
-#define GFORCE_STEADY_MAX 10.5
-#define TIPPED_OVER_Z_TRESHOLD 5
+#define FREQ 50           //one clock is 20 ms
+#define FREQ_MINIMUM 205  //1ms is 1/20, of 4096
+#define FREQ_MAXIMUM 410  //2ms is 2/20, of 4096
 
 CRGB leds[NUM_LEDS];
 
@@ -64,12 +54,10 @@ enum class TurretMode {
 Servo wingServo;
 Servo rotateServo;
 
-SoftwareSerial mySoftwareSerial(RX, TX); // RX, TX
-DFRobotDFPlayerMini myDFPlayer;
+Settings settings;
 
-#define FREQ 50     //one clock is 20 ms
-#define FREQ_MINIMUM 205 //1ms is 1/20, of 4096
-#define FREQ_MAXIMUM 410 //2ms is 2/20, of 4096
+SoftwareSerial mySoftwareSerial(RX, TX);  // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
 int currentMoveSpeed = 0;
 
 AsyncWebServer server = AsyncWebServer(80);
@@ -84,7 +72,6 @@ bool wasOpen;
 bool fullyOpened;
 bool alarm;
 bool needsSetup;
-bool myDFPlayerSetup = false;
 bool shouldUpdate = false;
 int diagnoseAction = -1;
 
@@ -92,8 +79,7 @@ bool isOpen() {
   return digitalRead(WING_SWITCH) == HIGH;
 }
 
-//For some reason we need to cache this value, as checking it every loop causes the webserver to freeze.
-//https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
+//For some reason we need to cache this value, as checking it every loop causes the webserver to freeze. //https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
 bool isDetectingMotionCached = false;
 unsigned long lastMotionCheck = 0;
 bool isDetectingMotion() {
@@ -123,16 +109,22 @@ void UpdateLEDPreloader() {
   }
 }
 
-void setup()
-{
-
-  Serial.begin(9600);
+void setup() {
+  Serial.begin(115200);
   // Initialize LittleFS
   if (!LittleFS.begin()) {
-    while (true) { }
+    while (true) {}
     return;
   }
-  Serial.println("LittleFS Initialized");
+
+  Serial.println("LittleFS Initialized, loading Settings");
+
+  settings = loadSettings();
+
+  Serial.println("Settings Volume:");
+  Serial.println(settings.audioVolume);
+
+  Serial.println("Setting up WLED");
 
   FastLED.addLeds<WS2812, RING_LEDS, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(84);
@@ -142,36 +134,34 @@ void setup()
   }
 
   pinMode(GUN_LEDS, OUTPUT);
+  pinMode(BUSY, INPUT);
+  pinMode(WING_SWITCH, INPUT_PULLUP);
 
-  wingServo.attach(SERVO_A);
-  rotateServo.attach(SERVO_B);
+  wingServo.attach(settings.wingPin);
+  rotateServo.attach(settings.rotatePin);
+
+  Serial.println("Closing wings");
 
   rotateServo.write(90);
   delay(250);
   fullyOpened = false;
-  wingServo.write(STATIONARY_ANGLE + 90);
-  while(isOpen()) {
+  unsigned long closingStartTime = millis();
+  wingServo.write(settings.idleAngle + 90);
+  while (millis() < closingStartTime + 3000 && isOpen()) {
     delay(10);
   }
   delay(CLOSE_STOP_DELAY);
-  wingServo.write(STATIONARY_ANGLE);
-
-  pinMode(BUSY, INPUT);
-  pinMode(WING_SWITCH, INPUT_PULLUP);
-
-  File wifiCreds = LittleFS.open(WIFI_CRED_FILE, "r");
-  String esid = wifiCreds.readStringUntil('\r'); wifiCreds.read();
-  String epass = wifiCreds.readStringUntil('\r'); wifiCreds.read();
+  wingServo.write(settings.idleAngle);
 
   WiFi.hostname("turret");
   WiFi.mode(WIFI_STA);
-  WiFi.begin(esid, epass);
+  WiFi.begin(settings.wifiSSID, settings.wifiPassword);
 
   unsigned long m = millis();
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.println("Starting wifi");
+  Serial.println("Starting wifi");
+  while (WiFi.status() != WL_CONNECTED) {
     UpdateLEDPreloader();
+    Serial.print(".");
     delay(50);
     if (m + 10000 < millis()) {
       WiFi.disconnect();
@@ -199,7 +189,6 @@ void setup()
   } else {
     Serial.println("Connected");
     Serial.println(WiFi.localIP());
-    delay(500);
   }
 
   UpdateLEDPreloader();
@@ -214,30 +203,21 @@ void setup()
 
   UpdateLEDPreloader();
 
-  startWebServer();
-  startWebSocket();
-  setupAccelerometer();
+  StartWebServer();
+  StartWebSocket();
+  SetupAccelerometer();
 
   UpdateLEDPreloader();
 
-  Serial.println("Begin MDNS");
-  if (MDNS.begin("turret", WiFi.localIP())) {
-    Serial.println("MDSN setup");
-    MDNS.addService("http", "tcp", 80);
-    MDNS.addService("http", "tcp", 81);
-  } else {
-    Serial.println("MDSN failed");
-  }
-  delay(200);
   Serial.end();
 
   UpdateLEDPreloader();
 
 #ifdef USE_AUDIO
   mySoftwareSerial.begin(9600);
-  delay(200);
-  myDFPlayerSetup = myDFPlayer.begin(mySoftwareSerial);
-  if (myDFPlayerSetup) myDFPlayer.volume(15);
+  myDFPlayer.begin(mySoftwareSerial);
+  delay(100);
+  myDFPlayer.volume(settings.audioVolume);
 #endif
 
   UpdateLEDPreloader();
@@ -246,7 +226,7 @@ void setup()
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
-    } else { // U_FS
+    } else {  // U_FS
       type = "filesystem";
     }
 
@@ -276,8 +256,7 @@ void setup()
   ArduinoOTA.setHostname("turret");
   ArduinoOTA.begin();
 
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
+  for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CRGB(255, 0, 0);
     FastLED.show();
   }
@@ -285,15 +264,8 @@ void setup()
   previousTime = millis();
 }
 
-void preloader(uint8_t led) {
-  FastLED.clear();
-  leds[led] = CRGB(255, 0, 0);
-  FastLED.show();
-}
-
-void loop()
-{
-  MDNS.update();
+void loop() {
+  //MDNS.update();
   //if (!isConnected) return;
 
   wingsOpen = isOpen();
@@ -305,14 +277,14 @@ void loop()
   } else {
     switch (diagnoseAction) {
       case 0:
-        wingServo.write(STATIONARY_ANGLE - 90);
+        wingServo.write(settings.idleAngle - 90);
         delay(250);
-        wingServo.write(STATIONARY_ANGLE);
+        wingServo.write(settings.idleAngle);
         break;
       case 1:
-        wingServo.write(STATIONARY_ANGLE + 90);
+        wingServo.write(settings.idleAngle + 90);
         delay(250);
-        wingServo.write(STATIONARY_ANGLE);
+        wingServo.write(settings.idleAngle);
         break;
       case 2:
         rotateServo.write(50);
@@ -352,18 +324,17 @@ void loop()
   if (currentMoveSpeed > 0 && wasOpen && !wingsOpen) {
     currentMoveSpeed = 0;
     delay(CLOSE_STOP_DELAY);
-    wingServo.write(STATIONARY_ANGLE);
+    wingServo.write(settings.idleAngle);
   }
 
   wasOpen = wingsOpen;
 
-  if (websocketStarted && millis() > nextWebSocketUpdateTime)
-  {
+  if (websocketStarted && millis() > nextWebSocketUpdateTime) {
 
     nextWebSocketUpdateTime = millis() + 30;
     int a = analogRead(A0);
 
-    updateAccelerometer();
+    UpdateAccelerometer();
 
     int16_t x = smoothX / measurements;
     int16_t y = smoothY / measurements;
@@ -380,7 +351,7 @@ void loop()
       (isDetectingMotion() ? 1 : 0),
       ((uint8_t)(a >> 8)) & 0xFF,
       ((uint8_t)a) & 0xFF,
-      (uint8_t) currentState,
+      (uint8_t)currentState,
       (isPlayingAudio() ? 1 : 0),
     };
     webSocket.broadcastBIN(values, 12);

@@ -1,14 +1,25 @@
-void startWebServer()
-{
-  Serial.println("Start webserver");
-  server.serveStatic("/", LittleFS, "/");
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request)
-  {
-    request->send(LittleFS, "index.html", String(), false, processor);
-  });
+#include "index.html.gz.h";
 
-  server.onNotFound([](AsyncWebServerRequest * request)
-  {
+void StartWebServer() {
+  Serial.println("Start webserver");
+
+  //server.serveStatic("/", LittleFS, "/");
+  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   request->send(LittleFS, "index.html", String(), false, processor);
+  // });
+
+  ArRequestHandlerFunction siteHandler = [](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html_gz, index_html_gz_len);
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+  };
+
+  server.on("/", HTTP_GET, siteHandler);
+  server.on("/diagnose", HTTP_GET, siteHandler);
+  server.on("/setup", HTTP_GET, siteHandler);
+  server.on("/settings", HTTP_GET, siteHandler);
+
+  server.onNotFound([](AsyncWebServerRequest *request) {
     if (request->method() == HTTP_OPTIONS) {
       request->send(200);
     } else {
@@ -16,35 +27,55 @@ void startWebServer()
     }
   });
 
-  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest * request) {
-    Serial.println("Do Setup");
-    request->send(LittleFS, "/setup.html", String(), false, processor);
-  });
-
-  server.on("/setup", HTTP_POST, [](AsyncWebServerRequest * request) {
-
+  ArRequestHandlerFunction settingsHandler = [](AsyncWebServerRequest *request) {
     if (request->hasParam("ssid", true) && request->hasParam("pw", true)) {
-      Serial.println("Get SSID");
-      AsyncWebParameter* ssid = request->getParam("ssid", true);
-      Serial.println("Get PW");
-      AsyncWebParameter* pw = request->getParam("pw", true);
-
-      const char* ssidStr = ssid->value().c_str();
-      const char* passwordStr = pw->value().c_str();
-
-      File wifiCreds = LittleFS.open(WIFI_CRED_FILE, "w+");
-      wifiCreds.print(ssidStr);
-      wifiCreds.print("\r\n");
-      wifiCreds.print(passwordStr);
-      wifiCreds.print("\r\n");
-      wifiCreds.close();
+      settings.wifiSSID = request->getParam("ssid", true)->value();
+      settings.wifiPassword = request->getParam("pw", true)->value();
+    }
+    if (request->hasParam("audioVolume", true)) {
+      settings.audioVolume = request->getParam("audioVolume", true)->value().toInt() & 0xFF;
+    }
+    if (request->hasParam("centerAngle", true)) {
+      settings.centerAngle = request->getParam("centerAngle", true)->value().toInt();
+    }
+    if (request->hasParam("idleAngle", true)) {
+      settings.idleAngle = request->getParam("idleAngle", true)->value().toInt();
+    }
+    if (request->hasParam("wingPin", true)) {
+      settings.wingPin = request->getParam("wingPin", true)->value().toInt();
+    }
+    if (request->hasParam("rotatePin", true)) {
+      settings.rotatePin = request->getParam("rotatePin", true)->value().toInt();
+    }
+    if (request->hasParam("openDuration", true)) {
+      settings.openDuration = request->getParam("openDuration", true)->value().toInt();
+    }
+    if (request->hasParam("maxRotation", true)) {
+      settings.maxRotation = request->getParam("maxRotation", true)->value().toInt();
+    }
+    if (request->hasParam("panicTreshold", true)) {
+      settings.panicTreshold = request->getParam("panicTreshold", true)->value().toFloat();
+    }
+    if (request->hasParam("restTreshold", true)) {
+      settings.restTreshold = request->getParam("restTreshold", true)->value().toFloat();
+    }
+    if (request->hasParam("tippedOverTreshold", true)) {
+      settings.tippedOverTreshold = request->getParam("tippedOverTreshold", true)->value().toFloat();
     }
 
+    saveSettings(settings);
     request->send(200, "text/html", "ok");
     requestReboot();
+  };
+
+  server.on("/setup", HTTP_POST, settingsHandler);
+  server.on("/settings", HTTP_POST, settingsHandler);
+
+  server.on("/get_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "application/json", settingsToJSON(settings));
   });
 
-  server.on("/scan", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request) {
     String json = "[";
     int n = WiFi.scanComplete();
     if (n == -2) {
@@ -70,57 +101,42 @@ void startWebServer()
     request->send(200, "application/json", json);
   });
 
-  server.on("/set_mode", HTTP_POST, [](AsyncWebServerRequest * request)
-  {
-    if (request->hasParam("mode", true))
-    {
+  server.on("/set_mode", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("mode", true)) {
       AsyncWebParameter *modeParam = request->getParam("mode", true);
-      currentTurretMode = (TurretMode) modeParam->value().toInt();
+      currentTurretMode = (TurretMode)modeParam->value().toInt();
       currentRotateAngle = 90;
-      request->send(200, "text/html", "State set");
+      request->send(200, "text/html", currentTurretMode == TurretMode::Automatic ? "Automatic" : "Manual");
     } else {
       request->send(200, "text/html", "Failed to set mode");
     }
   });
 
-  server.on("/set_state", HTTP_POST, [](AsyncWebServerRequest * request)
-  {
-    if (request->hasParam("state", true))
-    {
+  server.on("/set_state", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("state", true)) {
       AsyncWebParameter *stateParam = request->getParam("state", true);
       int state = stateParam->value().toInt();
-      setState((TurretState) state);
+      setState((TurretState)state);
       request->send(200, "text/html", "State set");
-    }
-    else
-    {
+    } else {
       request->send(200, "text/html", "No state sent");
     }
   });
 
-  server.on("/diagnose", HTTP_GET, [](AsyncWebServerRequest * request) {
-    diagnoseMode = true;
-    request->send(LittleFS, "/diagnose.html", String(), false, processor);
-  });
-
-  server.on("/diagnose", HTTP_POST, [](AsyncWebServerRequest * request)
-  {
-    if (request->hasParam("action", true))
-    {
+  server.on("/diagnose", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("action", true)) {
       AsyncWebParameter *stateParam = request->getParam("action", true);
+      diagnoseMode = true;
       diagnoseAction = stateParam->value().toInt();
       request->send(200, "text/html", "Diagnose");
-    }
-    else
-    {
+    } else {
       request->send(200, "text/html", "No Action Sent");
     }
   });
 
-  server.on("/set_open", HTTP_POST, [](AsyncWebServerRequest * request) {
+  server.on("/set_open", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (currentTurretMode == TurretMode::Manual) {
-      if (request->hasParam("open", true))
-      {
+      if (request->hasParam("open", true)) {
         AsyncWebParameter *openParam = request->getParam("open", true);
         if (openParam->value().toInt() == 1) {
           setManualState(ManualState::Opening);
@@ -137,36 +153,31 @@ void startWebServer()
     }
   });
 
-  server.on("/set_angle", HTTP_POST, [](AsyncWebServerRequest * request)
-  {
-    //Serial.println("Set angle request");
-    if (request->hasParam("angle", true))
-    {
+  server.on("/set_angle", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("angle", true)) {
       AsyncWebParameter *angleParam = request->getParam("angle", true);
       AsyncWebParameter *servoParam = request->getParam("servo", true);
       int angle = angleParam->value().toInt();
       int servo = servoParam->value().toInt();
       currentMoveSpeed = angle;
       if (servo == 0) {
-        wingServo.write(STATIONARY_ANGLE + angle);
+        wingServo.write(settings.idleAngle + angle);
       } else {
         rotateServo.write(90 + angle);
       }
-
       request->send(200, "text/html", "Angle set");
-    }
-    else
-    {
+    } else {
       request->send(200, "text/html", "No angle sent");
     }
   });
 
-  server.on("/reset_wifi", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/reset_wifi", HTTP_GET, [](AsyncWebServerRequest *request) {
     WiFi.disconnect();
     request->send(200, "text/html", "Wifi reset");
   });
 
-  //DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+
   Serial.println("server.begin()");
   server.begin();
 }
@@ -177,8 +188,7 @@ void requestReboot() {
   }
 }
 
-String processor(const String &var)
-{
+String processor(const String &var) {
   if (var == "IP")
     return WiFi.localIP().toString();
   return String();
