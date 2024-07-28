@@ -13,7 +13,7 @@ COROUTINE(openWingsRoutine) {
 COROUTINE(closeWingsRoutine) {
   static unsigned long startTime;
   COROUTINE_BEGIN();
-  rotateServo.write(90);
+  rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
   startTime = millis();
@@ -83,7 +83,7 @@ COROUTINE(searchingRoutine) {
     float t = millis() / 1000.0;
     uint16_t s = t * 255;
     if (fullyOpened) {
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - settings.maxRotation, 90 + settings.maxRotation));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, settings.centerAngle - settings.maxRotation, settings.centerAngle + settings.maxRotation));
     }
     COROUTINE_YIELD();
   }
@@ -120,8 +120,8 @@ COROUTINE(engagingRoutine) {
 
   if (fullyOpened) {
     int whatSide = random(0, 2);
-    fromAngle = whatSide == 0 ? 90 - settings.maxRotation : 90 + settings.maxRotation;
-    toAngle = whatSide == 0 ? 90 + settings.maxRotation : 90 - settings.maxRotation;
+    fromAngle = whatSide == 0 ? settings.centerAngle - settings.maxRotation : settings.centerAngle + settings.maxRotation;
+    toAngle = whatSide == 0 ? settings.centerAngle + settings.maxRotation : settings.centerAngle - settings.maxRotation;
 
     if (fullyOpened) {
       rotateServo.write(fromAngle);
@@ -157,7 +157,7 @@ COROUTINE(targetLostRoutine) {
   COROUTINE_AWAIT(!isPlayingAudio());
 #endif
 
-  rotateServo.write(90);
+  rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
   wingServo.write(settings.idleAngle + 90);
@@ -183,7 +183,7 @@ COROUTINE(pickedUpRoutine) {
     if (fullyOpened) {
       float t = millis() / 1000.0 * 5.0;
       uint16_t s = t * 255;
-      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, 90 - settings.maxRotation, 90 + settings.maxRotation));
+      rotateServo.write(map(constrain(inoise8_raw(s) * 2, -100, 100), -100, 100, settings.centerAngle - settings.maxRotation, settings.centerAngle + settings.maxRotation));
     }
 #ifdef USE_AUDIO
     if (millis() > nextAudioClipTime) {
@@ -213,7 +213,7 @@ COROUTINE(shutdownRoutine) {
   myDFPlayer.playFolder(4, random(1, 9));
 #endif
 
-  rotateServo.write(90);
+  rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
   wingServo.write(settings.idleAngle + 90);
@@ -311,14 +311,14 @@ COROUTINE(manualEngagingRoutine) {
 }
 
 int8_t currentRotateDirection = 0;
-int currentRotateAngle = 90;
+int currentRotateAngle = settings.centerAngle;
 
 COROUTINE(manualMovementRoutine) {
   COROUTINE_LOOP() {
     if (currentRotateDirection != 0) {
       if (fullyOpened) {
         currentRotateAngle += currentRotateDirection;
-        currentRotateAngle = constrain(currentRotateAngle, 90 - settings.maxRotation, 90 + settings.maxRotation);
+        currentRotateAngle = constrain(currentRotateAngle, settings.centerAngle - settings.maxRotation, settings.centerAngle + settings.maxRotation);
         rotateServo.write(currentRotateAngle);
       }
     }

@@ -3,6 +3,7 @@
 
 //Network
 #include <ESP8266WiFi.h>
+#include <DNSServer.h>
 #include <ESP8266httpUpdate.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -44,6 +45,10 @@ using namespace ace_routine;
 #define FREQ_MINIMUM 205  //1ms is 1/20, of 4096
 #define FREQ_MAXIMUM 410  //2ms is 2/20, of 4096
 
+bool useCaptive = false;
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
+
 CRGB leds[NUM_LEDS];
 
 enum class TurretMode {
@@ -66,6 +71,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 bool websocketStarted;
 bool diagnoseMode = false;
 unsigned long nextWebSocketUpdateTime = 0;
+unsigned long nextLEDUpdateTime = 0;
 
 bool wingsOpen;
 bool wasOpen;
@@ -142,7 +148,7 @@ void setup() {
 
   Serial.println("Closing wings");
 
-  rotateServo.write(90);
+  rotateServo.write(settings.centerAngle);
   delay(250);
   fullyOpened = false;
   unsigned long closingStartTime = millis();
@@ -183,8 +189,11 @@ void setup() {
     IPAddress gateway(192, 168, 4, 1);
     IPAddress subnet(255, 255, 255, 0);
 
+    useCaptive = true;
+
     WiFi.softAPConfig(local_IP, gateway, subnet);
     WiFi.softAP("Portal Turret");
+    dnsServer.start(DNS_PORT, "*", local_IP);
 
   } else {
     Serial.println("Connected");
@@ -265,13 +274,14 @@ void setup() {
 }
 
 void loop() {
-  //MDNS.update();
-  //if (!isConnected) return;
-
   wingsOpen = isOpen();
 
   ArduinoOTA.handle();
   webSocket.loop();
+  if(useCaptive) {
+    dnsServer.processNextRequest();
+  }
+
   if (!diagnoseMode) {
     stateBehaviour();
   } else {
@@ -328,6 +338,19 @@ void loop() {
   }
 
   wasOpen = wingsOpen;
+
+  if (millis() > nextLEDUpdateTime + 16) {
+    nextLEDUpdateTime = millis();
+    if (alarm) {
+      uint8_t phase = ((millis() * 2) % 255) & 0xFF;
+      uint8_t red = cubicwave8(phase);
+      fill_solid(leds, NUM_LEDS, CRGB(red, 0, 0));
+      FastLED.show();
+    } else {
+      fill_solid(leds, NUM_LEDS, CRGB::Red);
+      FastLED.show();
+    }
+  }
 
   if (websocketStarted && millis() > nextWebSocketUpdateTime) {
 

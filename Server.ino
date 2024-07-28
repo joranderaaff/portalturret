@@ -19,13 +19,7 @@ void StartWebServer() {
   server.on("/setup", HTTP_GET, siteHandler);
   server.on("/settings", HTTP_GET, siteHandler);
 
-  server.onNotFound([](AsyncWebServerRequest *request) {
-    if (request->method() == HTTP_OPTIONS) {
-      request->send(200);
-    } else {
-      request->send(404);
-    }
-  });
+  server.onNotFound(siteHandler);
 
   ArRequestHandlerFunction settingsHandler = [](AsyncWebServerRequest *request) {
     if (request->hasParam("ssid", true) && request->hasParam("pw", true)) {
@@ -173,6 +167,9 @@ void StartWebServer() {
 
   server.on("/reset_wifi", HTTP_GET, [](AsyncWebServerRequest *request) {
     WiFi.disconnect();
+    settings.wifiSSID = "";
+    settings.wifiPassword = "";
+    saveSettings(settings);
     request->send(200, "text/html", "Wifi reset");
   });
 
