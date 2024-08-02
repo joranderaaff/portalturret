@@ -35,6 +35,9 @@ void StartWebServer() {
     if (request->hasParam("idleAngle", true)) {
       settings.idleAngle = request->getParam("idleAngle", true)->value().toInt();
     }
+    if (request->hasParam("wingRotateDirection", true)) {
+      settings.wingRotateDirection = request->getParam("wingRotateDirection", true)->value().toInt();
+    }
     if (request->hasParam("wingPin", true)) {
       settings.wingPin = request->getParam("wingPin", true)->value().toInt();
     }
@@ -155,7 +158,7 @@ void StartWebServer() {
       int servo = servoParam->value().toInt();
       currentMoveSpeed = angle;
       if (servo == 0) {
-        wingServo.write(settings.idleAngle + angle);
+        wingServo.write(settings.idleAngle + settings.wingRotateDirection * angle);
       } else {
         rotateServo.write(90 + angle);
       }

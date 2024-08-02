@@ -152,7 +152,7 @@ void setup() {
   delay(250);
   fullyOpened = false;
   unsigned long closingStartTime = millis();
-  wingServo.write(settings.idleAngle + 90);
+  wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
   while (millis() < closingStartTime + 3000 && isOpen()) {
     delay(10);
   }
@@ -287,12 +287,12 @@ void loop() {
   } else {
     switch (diagnoseAction) {
       case 0:
-        wingServo.write(settings.idleAngle - 90);
+        wingServo.write(settings.idleAngle - settings.wingRotateDirection * 90);
         delay(250);
         wingServo.write(settings.idleAngle);
         break;
       case 1:
-        wingServo.write(settings.idleAngle + 90);
+        wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
         delay(250);
         wingServo.write(settings.idleAngle);
         break;

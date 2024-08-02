@@ -2,7 +2,7 @@ COROUTINE(openWingsRoutine) {
   COROUTINE_BEGIN();
   if (!isOpen()) {
     fullyOpened = false;
-    wingServo.write(settings.idleAngle - 90);
+    wingServo.write(settings.idleAngle - settings.wingRotateDirection * 90);
     COROUTINE_DELAY(settings.openDuration);
     wingServo.write(settings.idleAngle);
     fullyOpened = true;
@@ -17,7 +17,7 @@ COROUTINE(closeWingsRoutine) {
   COROUTINE_DELAY(250);
   fullyOpened = false;
   startTime = millis();
-  wingServo.write(settings.idleAngle + 90);
+  wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
   COROUTINE_AWAIT(!isOpen() || millis() > startTime + 2000);
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
   wingServo.write(settings.idleAngle);
@@ -50,7 +50,7 @@ COROUTINE(activatedRoutine) {
   if (closedAtStart) {
     if (!isOpen()) {
       fullyOpened = false;
-      wingServo.write(settings.idleAngle - 90);
+      wingServo.write(settings.idleAngle - settings.wingRotateDirection * 90);
       COROUTINE_DELAY(settings.openDuration);
       wingServo.write(settings.idleAngle);
       fullyOpened = true;
@@ -134,9 +134,9 @@ COROUTINE(engagingRoutine) {
         rotateServo.write(map(millis(), fromTime, toTime, fromAngle, toAngle));
       }
       analogWrite(GUN_LEDS, 255);
-      COROUTINE_DELAY(10);
+      COROUTINE_DELAY(5);
       analogWrite(GUN_LEDS, 0);
-      COROUTINE_DELAY(15);
+      COROUTINE_DELAY(30);
     }
   }
   COROUTINE_END();
@@ -160,7 +160,7 @@ COROUTINE(targetLostRoutine) {
   rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
-  wingServo.write(settings.idleAngle + 90);
+  wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
   COROUTINE_AWAIT(!isOpen());
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
   wingServo.write(settings.idleAngle);
@@ -216,7 +216,7 @@ COROUTINE(shutdownRoutine) {
   rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
-  wingServo.write(settings.idleAngle + 90);
+  wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
   closingStartTime = millis();
   COROUTINE_AWAIT(!isOpen() || millis() > closingStartTime + 2000);
   COROUTINE_DELAY(CLOSE_STOP_DELAY);
@@ -302,9 +302,9 @@ COROUTINE(manualEngagingRoutine) {
 
     while (toTime > millis()) {
       analogWrite(GUN_LEDS, 255);
-      COROUTINE_DELAY(10);
+      COROUTINE_DELAY(5);
       analogWrite(GUN_LEDS, 0);
-      COROUTINE_DELAY(15);
+      COROUTINE_DELAY(30);
     }
   }
   COROUTINE_END();
