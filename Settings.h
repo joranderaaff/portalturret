@@ -1,8 +1,7 @@
-#include <LittleFS.h>
+#ifndef PT_SETTINGS
+#define PT_SETTINGS
 #include <ArduinoJson.h>
-
-// Define the file path for settings
-const char* settingsFilePath = "settings.json";
+#include <LittleFS.h>
 
 // Structure to hold settings
 struct Settings {
@@ -21,12 +20,25 @@ struct Settings {
   float tippedOverTreshold = 5;
 };
 
-String settingsToJSON(const Settings& settingsIn) {
+// Define the file path for settings
+const char *settingsFilePath = "settings.json";
+
+bool settingsLoaded = false;
+
+void InitSettings() {
+  if (!LittleFS.begin()) {
+    while (true) {}
+    return;
+  }
+}
+
+String SettingsToJSON(const Settings &settingsIn) {
   String json = "{";
   json += "\"audioVolume\":" + String(settingsIn.audioVolume) + ",";
   json += "\"centerAngle\":" + String(settingsIn.centerAngle) + ",";
   json += "\"idleAngle\":" + String(settingsIn.idleAngle) + ",";
-  json += "\"wingRotateDirection\":" + String(settingsIn.wingRotateDirection) + ",";
+  json +=
+    "\"wingRotateDirection\":" + String(settingsIn.wingRotateDirection) + ",";
   json += "\"wingPin\":" + String(settingsIn.wingPin) + ",";
   json += "\"rotatePin\":" + String(settingsIn.rotatePin) + ",";
   json += "\"openDuration\":" + String(settingsIn.openDuration) + ",";
@@ -39,7 +51,7 @@ String settingsToJSON(const Settings& settingsIn) {
 }
 
 // Function to save settings to the filesystem
-void saveSettings(const Settings& settingsIn) {
+void SaveSettings(const Settings &settingsIn) {
   Serial.println("Saving settings");
   File file = LittleFS.open(settingsFilePath, "w");
   if (!file) {
@@ -76,38 +88,57 @@ void saveSettings(const Settings& settingsIn) {
 }
 
 // Function to load settings from the filesystem
-Settings loadSettings() {
+Settings LoadSettings() {
   Settings settings;
+  if (!settingsLoaded) {
 
-  File file = LittleFS.open(settingsFilePath, "r");
-  if (!file) {
-    Serial.println("Failed to open settings file for reading");
-    return settings;  // Return default settings
+    File file = LittleFS.open(settingsFilePath, "r");
+    if (!file) {
+      Serial.println("Failed to open settings file for reading");
+      return settings;  // Return default settings
+    }
+
+    // Create a JSON document to read the settings
+    StaticJsonDocument<256> doc;
+    DeserializationError error = deserializeJson(doc, file);
+    if (error) {
+      Serial.println("Failed to parse settings file");
+      return settings;  // Return default settings
+    }
+
+    // Assign values from JSON to settings structure
+    if (doc.containsKey("wifiSSID"))
+      settings.wifiSSID = doc["wifiSSID"].as<String>();
+    if (doc.containsKey("wifiPassword"))
+      settings.wifiPassword = doc["wifiPassword"].as<String>();
+    if (doc.containsKey("audioVolume"))
+      settings.audioVolume = doc["audioVolume"].as<int>();
+    if (doc.containsKey("centerAngle"))
+      settings.centerAngle = doc["centerAngle"].as<int>();
+    if (doc.containsKey("idleAngle"))
+      settings.idleAngle = doc["idleAngle"].as<int>();
+    if (doc.containsKey("wingRotateDirection"))
+      settings.wingRotateDirection = doc["wingRotateDirection"].as<int>();
+    if (doc.containsKey("wingPin"))
+      settings.wingPin = doc["wingPin"].as<int>();
+    if (doc.containsKey("rotatePin"))
+      settings.rotatePin = doc["rotatePin"].as<int>();
+    if (doc.containsKey("openDuration"))
+      settings.openDuration = doc["openDuration"].as<int>();
+    if (doc.containsKey("maxRotation"))
+      settings.maxRotation = doc["maxRotation"].as<int>();
+    if (doc.containsKey("panicTreshold"))
+      settings.panicTreshold = doc["panicTreshold"].as<float>();
+    if (doc.containsKey("restTreshold"))
+      settings.restTreshold = doc["restTreshold"].as<float>();
+    if (doc.containsKey("tippedOverTreshold"))
+      settings.tippedOverTreshold = doc["tippedOverTreshold"].as<float>();
+
+    file.close();
+
+    settingsLoaded = true;
   }
 
-  // Create a JSON document to read the settings
-  StaticJsonDocument<256> doc;
-  DeserializationError error = deserializeJson(doc, file);
-  if (error) {
-    Serial.println("Failed to parse settings file");
-    return settings;  // Return default settings
-  }
-
-  // Assign values from JSON to settings structure
-  if (doc.containsKey("wifiSSID")) settings.wifiSSID = doc["wifiSSID"].as<String>();
-  if (doc.containsKey("wifiPassword")) settings.wifiPassword = doc["wifiPassword"].as<String>();
-  if (doc.containsKey("audioVolume")) settings.audioVolume = doc["audioVolume"].as<int>();
-  if (doc.containsKey("centerAngle")) settings.centerAngle = doc["centerAngle"].as<int>();
-  if (doc.containsKey("idleAngle")) settings.idleAngle = doc["idleAngle"].as<int>();
-  if (doc.containsKey("wingRotateDirection")) settings.wingRotateDirection = doc["wingRotateDirection"].as<int>();
-  if (doc.containsKey("wingPin")) settings.wingPin = doc["wingPin"].as<int>();
-  if (doc.containsKey("rotatePin")) settings.rotatePin = doc["rotatePin"].as<int>();
-  if (doc.containsKey("openDuration")) settings.openDuration = doc["openDuration"].as<int>();
-  if (doc.containsKey("maxRotation")) settings.maxRotation = doc["maxRotation"].as<int>();
-  if (doc.containsKey("panicTreshold")) settings.panicTreshold = doc["panicTreshold"].as<float>();
-  if (doc.containsKey("restTreshold")) settings.restTreshold = doc["restTreshold"].as<float>();
-  if (doc.containsKey("tippedOverTreshold")) settings.tippedOverTreshold = doc["tippedOverTreshold"].as<float>();
-
-  file.close();
   return settings;
 }
+#endif

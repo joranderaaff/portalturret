@@ -1,5 +1,19 @@
+#ifndef PT_ROUTINES
+#define PT_ROUTINES
+
+#include "Arduino.h"
+#include "Servos.h"
+#include "Settings.h"
+#include "LEDs.h"
+#include <AceRoutine.h>
+
+using namespace ace_routine;
+
+static bool fullyOpened;
+
 COROUTINE(openWingsRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
   if (!isOpen()) {
     fullyOpened = false;
     wingServo.write(settings.idleAngle - settings.wingRotateDirection * 90);
@@ -11,8 +25,9 @@ COROUTINE(openWingsRoutine) {
 }
 
 COROUTINE(closeWingsRoutine) {
-  static unsigned long startTime;
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
+  static unsigned long startTime;
   rotateServo.write(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
@@ -26,6 +41,7 @@ COROUTINE(closeWingsRoutine) {
 
 COROUTINE(activatedRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
 #ifdef USE_AUDIO
   if (isPlayingAudio()) {
@@ -63,6 +79,7 @@ COROUTINE(activatedRoutine) {
 
 COROUTINE(searchingRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
 #ifdef USE_AUDIO
   if (isPlayingAudio()) {
@@ -93,6 +110,7 @@ COROUTINE(searchingRoutine) {
 
 COROUTINE(engagingRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
   static unsigned long fromTime;
   static unsigned long toTime;
@@ -145,6 +163,7 @@ COROUTINE(engagingRoutine) {
 
 COROUTINE(targetLostRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
 #ifdef USE_AUDIO
   if (isPlayingAudio()) {
@@ -170,6 +189,7 @@ COROUTINE(targetLostRoutine) {
 
 COROUTINE(pickedUpRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 #ifdef USE_AUDIO
   if (isPlayingAudio()) {
     myDFPlayer.stop();
@@ -199,6 +219,7 @@ COROUTINE(pickedUpRoutine) {
 
 COROUTINE(shutdownRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
   static unsigned long fromTime;
   static unsigned long toTime;
@@ -250,6 +271,7 @@ COROUTINE(shutdownRoutine) {
 
 COROUTINE(rebootRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
 
   static unsigned long fromTime;
   static unsigned long toTime;
@@ -281,6 +303,7 @@ COROUTINE(rebootRoutine) {
 
 COROUTINE(manualEngagingRoutine) {
   COROUTINE_BEGIN();
+  static Settings settings = LoadSettings();
   if (fullyOpened) {
 #ifdef USE_AUDIO
     if (isPlayingAudio()) {
@@ -310,10 +333,10 @@ COROUTINE(manualEngagingRoutine) {
   COROUTINE_END();
 }
 
-int8_t currentRotateDirection = 0;
-int currentRotateAngle = settings.centerAngle;
-
 COROUTINE(manualMovementRoutine) {
+  Settings settings = LoadSettings();
+  static int8_t currentRotateDirection = 0;
+  static int currentRotateAngle = settings.centerAngle;
   COROUTINE_LOOP() {
     if (currentRotateDirection != 0) {
       if (fullyOpened) {
@@ -325,3 +348,4 @@ COROUTINE(manualMovementRoutine) {
     COROUTINE_DELAY(5);
   }
 }
+#endif
