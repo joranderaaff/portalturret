@@ -11,11 +11,9 @@
 #define NUM_LEDS 8
 class LEDs {
 public:
-
   bool alarm;
 
-  LEDs(Settings &settings) : settings(settings) {
-  }
+  LEDs() {}
 
   void Begin() {
     pinMode(GUN_LEDS, OUTPUT);
@@ -60,7 +58,6 @@ public:
 private:
   CRGB leds[NUM_LEDS];
   unsigned long nextLEDUpdateTime = 0;
-  Settings &settings;
 };
 
 #endif

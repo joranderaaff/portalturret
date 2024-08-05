@@ -14,7 +14,7 @@
 Settings settings;
 Sensors sensors(settings);
 Servos servos(settings, sensors);
-LEDs leds(settings);
+LEDs leds;
 SoftwareSerial softwareSerial(RX, TX);
 Audio audio(settings, softwareSerial);
 
@@ -26,12 +26,11 @@ void setup() {
   settings.Begin();
   sensors.Begin();
   leds.Begin();
-  
   servos.Begin();
+
   servos.CloseWings();
 
   StartServer();
-  InitStates();
 
   leds.FillLEDRing();
 }
