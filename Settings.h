@@ -1,10 +1,12 @@
 #ifndef PT_SETTINGS
 #define PT_SETTINGS
+
+#include "Arduino.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
-// Structure to hold settings
-struct Settings {
+class Settings {
+public:
   String wifiSSID;
   String wifiPassword;
   uint8_t audioVolume = 10;
@@ -18,84 +20,21 @@ struct Settings {
   float panicTreshold = 3;
   float restTreshold = 1;
   float tippedOverTreshold = 5;
-};
+  Settings() {}
+  void Begin() {
+    if (!LittleFS.begin()) {
+      while (true) {
+      }
+      return;
+    }
 
-// Define the file path for settings
-const char *settingsFilePath = "settings.json";
-
-bool settingsLoaded = false;
-
-void InitSettings() {
-  if (!LittleFS.begin()) {
-    while (true) {}
-    return;
-  }
-}
-
-String SettingsToJSON(const Settings &settingsIn) {
-  String json = "{";
-  json += "\"audioVolume\":" + String(settingsIn.audioVolume) + ",";
-  json += "\"centerAngle\":" + String(settingsIn.centerAngle) + ",";
-  json += "\"idleAngle\":" + String(settingsIn.idleAngle) + ",";
-  json +=
-    "\"wingRotateDirection\":" + String(settingsIn.wingRotateDirection) + ",";
-  json += "\"wingPin\":" + String(settingsIn.wingPin) + ",";
-  json += "\"rotatePin\":" + String(settingsIn.rotatePin) + ",";
-  json += "\"openDuration\":" + String(settingsIn.openDuration) + ",";
-  json += "\"maxRotation\":" + String(settingsIn.maxRotation) + ",";
-  json += "\"panicTreshold\":" + String(settingsIn.panicTreshold) + ",";
-  json += "\"restTreshold\":" + String(settingsIn.restTreshold) + ",";
-  json += "\"tippedOverTreshold\":" + String(settingsIn.tippedOverTreshold);
-  json += "}";
-  return json;
-}
-
-// Function to save settings to the filesystem
-void SaveSettings(const Settings &settingsIn) {
-  Serial.println("Saving settings");
-  File file = LittleFS.open(settingsFilePath, "w");
-  if (!file) {
-    Serial.println("Failed to open settings file for writing");
-    return;
-  }
-
-  // Create a JSON document to store the settings
-  StaticJsonDocument<256> doc;
-  doc["wifiSSID"] = settingsIn.wifiSSID;
-  doc["wifiPassword"] = settingsIn.wifiPassword;
-  doc["audioVolume"] = settingsIn.audioVolume;
-  doc["centerAngle"] = settingsIn.centerAngle;
-  doc["idleAngle"] = settingsIn.idleAngle;
-  doc["wingRotateDirection"] = settingsIn.wingRotateDirection;
-  doc["wingPin"] = settingsIn.wingPin;
-  doc["rotatePin"] = settingsIn.rotatePin;
-  doc["openDuration"] = settingsIn.openDuration;
-  doc["maxRotation"] = settingsIn.maxRotation;
-  doc["panicTreshold"] = settingsIn.panicTreshold;
-  doc["restTreshold"] = settingsIn.restTreshold;
-  doc["tippedOverTreshold"] = settingsIn.tippedOverTreshold;
-
-  Serial.println("Updated JSON");
-
-  // Serialize JSON to file
-  if (serializeJson(doc, file) == 0) {
-    Serial.println("Failed to write to settings file");
-  }
-
-  Serial.println("Saved settings to file");
-
-  file.close();
-}
-
-// Function to load settings from the filesystem
-Settings LoadSettings() {
-  Settings settings;
-  if (!settingsLoaded) {
+    // static Settings settings;
+    Serial.println("Settings not yet loaded, doing that now.");
 
     File file = LittleFS.open(settingsFilePath, "r");
     if (!file) {
       Serial.println("Failed to open settings file for reading");
-      return settings;  // Return default settings
+      return; // Return default settings
     }
 
     // Create a JSON document to read the settings
@@ -103,42 +42,96 @@ Settings LoadSettings() {
     DeserializationError error = deserializeJson(doc, file);
     if (error) {
       Serial.println("Failed to parse settings file");
-      return settings;  // Return default settings
+      return; // Return default settings
     }
 
     // Assign values from JSON to settings structure
     if (doc.containsKey("wifiSSID"))
-      settings.wifiSSID = doc["wifiSSID"].as<String>();
+      wifiSSID = doc["wifiSSID"].as<String>();
     if (doc.containsKey("wifiPassword"))
-      settings.wifiPassword = doc["wifiPassword"].as<String>();
+      wifiPassword = doc["wifiPassword"].as<String>();
     if (doc.containsKey("audioVolume"))
-      settings.audioVolume = doc["audioVolume"].as<int>();
+      audioVolume = doc["audioVolume"].as<int>();
     if (doc.containsKey("centerAngle"))
-      settings.centerAngle = doc["centerAngle"].as<int>();
+      centerAngle = doc["centerAngle"].as<int>();
     if (doc.containsKey("idleAngle"))
-      settings.idleAngle = doc["idleAngle"].as<int>();
+      idleAngle = doc["idleAngle"].as<int>();
     if (doc.containsKey("wingRotateDirection"))
-      settings.wingRotateDirection = doc["wingRotateDirection"].as<int>();
+      wingRotateDirection = doc["wingRotateDirection"].as<int>();
     if (doc.containsKey("wingPin"))
-      settings.wingPin = doc["wingPin"].as<int>();
+      wingPin = doc["wingPin"].as<int>();
     if (doc.containsKey("rotatePin"))
-      settings.rotatePin = doc["rotatePin"].as<int>();
+      rotatePin = doc["rotatePin"].as<int>();
     if (doc.containsKey("openDuration"))
-      settings.openDuration = doc["openDuration"].as<int>();
+      openDuration = doc["openDuration"].as<int>();
     if (doc.containsKey("maxRotation"))
-      settings.maxRotation = doc["maxRotation"].as<int>();
+      maxRotation = doc["maxRotation"].as<int>();
     if (doc.containsKey("panicTreshold"))
-      settings.panicTreshold = doc["panicTreshold"].as<float>();
+      panicTreshold = doc["panicTreshold"].as<float>();
     if (doc.containsKey("restTreshold"))
-      settings.restTreshold = doc["restTreshold"].as<float>();
+      restTreshold = doc["restTreshold"].as<float>();
     if (doc.containsKey("tippedOverTreshold"))
-      settings.tippedOverTreshold = doc["tippedOverTreshold"].as<float>();
+      tippedOverTreshold = doc["tippedOverTreshold"].as<float>();
 
     file.close();
-
-    settingsLoaded = true;
   }
 
-  return settings;
-}
+  // Function to save settings to the filesystem
+  void SaveSettings() {
+    Serial.println("Saving settings");
+    File file = LittleFS.open(settingsFilePath, "w");
+    if (!file) {
+      Serial.println("Failed to open settings file for writing");
+      return;
+    }
+
+    // Create a JSON document to store the settings
+    StaticJsonDocument<256> doc;
+    doc["wifiSSID"] = wifiSSID;
+    doc["wifiPassword"] = wifiPassword;
+    doc["audioVolume"] = audioVolume;
+    doc["centerAngle"] = centerAngle;
+    doc["idleAngle"] = idleAngle;
+    doc["wingRotateDirection"] = wingRotateDirection;
+    doc["wingPin"] = wingPin;
+    doc["rotatePin"] = rotatePin;
+    doc["openDuration"] = openDuration;
+    doc["maxRotation"] = maxRotation;
+    doc["panicTreshold"] = panicTreshold;
+    doc["restTreshold"] = restTreshold;
+    doc["tippedOverTreshold"] = tippedOverTreshold;
+
+    Serial.println("Updated JSON");
+
+    // Serialize JSON to file
+    if (serializeJson(doc, file) == 0) {
+      Serial.println("Failed to write to settings file");
+    }
+
+    Serial.println("Saved settings to file");
+
+    file.close();
+  }
+
+  String SettingsToJSON() {
+    String json = "{";
+    json += "\"audioVolume\":" + String(audioVolume) + ",";
+    json += "\"centerAngle\":" + String(centerAngle) + ",";
+    json += "\"idleAngle\":" + String(idleAngle) + ",";
+    json += "\"wingRotateDirection\":" + String(wingRotateDirection) + ",";
+    json += "\"wingPin\":" + String(wingPin) + ",";
+    json += "\"rotatePin\":" + String(rotatePin) + ",";
+    json += "\"openDuration\":" + String(openDuration) + ",";
+    json += "\"maxRotation\":" + String(maxRotation) + ",";
+    json += "\"panicTreshold\":" + String(panicTreshold) + ",";
+    json += "\"restTreshold\":" + String(restTreshold) + ",";
+    json += "\"tippedOverTreshold\":" + String(tippedOverTreshold);
+    json += "}";
+    return json;
+  }
+
+private:
+  // Define the file path for settings
+  const char *settingsFilePath = "settings.json";
+};
 #endif

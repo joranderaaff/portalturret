@@ -1,6 +1,7 @@
 #ifndef PT_AUDIO
 #define PT_AUDIO
 
+#include "Arduino.h"
 #include "Settings.h"
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
@@ -8,16 +9,34 @@
 #define BUSY D0
 #define USE_AUDIO 1
 
-SoftwareSerial mySoftwareSerial(RX, TX); // RX, TX
-DFRobotDFPlayerMini myDFPlayer;
+class Audio {
+public:
+  Audio(Settings &settings, SoftwareSerial &softwareSerial)
+    : settings(settings), softwareSerial(softwareSerial) {
+#ifdef USE_AUDIO
+    pinMode(BUSY, INPUT);
+    softwareSerial.begin(9600);
+    myDFPlayer.begin(softwareSerial);
+    delay(100);
+    myDFPlayer.volume(settings.audioVolume);
+#endif
+  }
 
-void InitAudio() {
-  Settings settings = LoadSettings();
-  pinMode(BUSY, INPUT);
-  mySoftwareSerial.begin(9600);
-  myDFPlayer.begin(mySoftwareSerial);
-  delay(100);
-  myDFPlayer.volume(settings.audioVolume);
-}
+  void PlaySound(uint8_t folder, uint8_t file) {
+    myDFPlayer.playFolder(folder, file);
+  }
+
+  void Stop() {
+    myDFPlayer.stop();
+  }
+
+  bool IsPlayingAudio() {
+    return digitalRead(BUSY) == LOW;
+  }
+private:
+  Settings &settings;
+  SoftwareSerial &softwareSerial;
+  DFRobotDFPlayerMini myDFPlayer;
+};
 
 #endif

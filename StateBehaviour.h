@@ -2,7 +2,6 @@
 #define PT_STATE_BEHAVIOUR
 
 #include "Arduino.h"
-#include "Routines.h"
 #include "Servos.h"
 #include "Settings.h"
 
@@ -48,9 +47,8 @@ void InitStates() {
 }
 
 void setState(TurretState nextState) {
-  Settings settings = LoadSettings();
   // Stop the Wing Servos just in case;
-  wingServo.write(settings.idleAngle);
+  servos.SetWingAngle(settings.idleAngle);
 
   if (currentTurretMode == TurretMode::Automatic) {
     switch (nextState) {
@@ -85,9 +83,8 @@ void setState(TurretState nextState) {
 }
 
 void setManualState(ManualState nextState) {
-  Settings settings = LoadSettings();
   // Stop the Wing Servos just in case;
-  wingServo.write(settings.idleAngle);
+  servos.SetWingAngle(settings.idleAngle);
 
   if (currentTurretMode == TurretMode::Manual) {
     switch (nextState) {
@@ -110,7 +107,6 @@ void manualRotation(unsigned long deltaTime) {
 }
 
 void UpdateStateBehaviour() {
-  Settings settings = LoadSettings();
   if (!diagnoseMode) {
     unsigned long deltaTime = millis() - previousTime;
     previousTime = millis();
@@ -143,18 +139,18 @@ void UpdateStateBehaviour() {
     }
     if (currentTurretMode == TurretMode::Automatic) {
 
-      bool motionDetected = isDetectingMotion();
+      bool motionDetected = sensors.IsDetectingMotion();
 
-      float zMovement = (smoothZ / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
-      float xMovement = (smoothX / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
-      float yMovement = (smoothY / measurements * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
+      float zMovement = (sensors.smoothZ / MEASUREMENTS * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
+      float xMovement = (sensors.smoothX / MEASUREMENTS * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
+      float yMovement = (sensors.smoothY / MEASUREMENTS * SENSORS_GRAVITY_STANDARD * ADXL345_MG2G_MULTIPLIER);
 
       bool pickedUp =
-        accelerometerBuffered && (xMovement < -settings.panicTreshold || xMovement > settings.panicTreshold || yMovement < -settings.panicTreshold || yMovement > settings.panicTreshold);
+        sensors.accelerometerBuffered && (xMovement < -settings.panicTreshold || xMovement > settings.panicTreshold || yMovement < -settings.panicTreshold || yMovement > settings.panicTreshold);
       bool movedAround =
-        accelerometerBuffered && (xMovement < -settings.restTreshold || xMovement > settings.restTreshold || yMovement < -settings.restTreshold || yMovement > settings.restTreshold);
+        sensors.accelerometerBuffered && (xMovement < -settings.restTreshold || xMovement > settings.restTreshold || yMovement < -settings.restTreshold || yMovement > settings.restTreshold);
       bool onItsSide =
-        accelerometerBuffered && (zMovement < settings.tippedOverTreshold);
+        sensors.accelerometerBuffered && (zMovement < settings.tippedOverTreshold);
 
       if (movedAround) {
         lastMovementTime = millis();
@@ -197,7 +193,7 @@ void UpdateStateBehaviour() {
         case TurretState::Engaging:
           engagingRoutine.runCoroutine();
           if (engagingRoutine.isDone()) {
-            if (wingsOpen) {
+            if (sensors.WingsAreOpen()) {
               setState(TurretState::Searching);
             } else {
               setState(TurretState::Idle);
@@ -229,24 +225,24 @@ void UpdateStateBehaviour() {
   } else {
     switch (diagnoseAction) {
       case 0:
-        wingServo.write(settings.idleAngle - settings.wingRotateDirection * 90);
+        servos.SetWingAngle(settings.idleAngle - settings.wingRotateDirection * 90);
         delay(250);
-        wingServo.write(settings.idleAngle);
+        servos.SetWingAngle(settings.idleAngle);
         break;
       case 1:
-        wingServo.write(settings.idleAngle + settings.wingRotateDirection * 90);
+        servos.SetWingAngle(settings.idleAngle + settings.wingRotateDirection * 90);
         delay(250);
-        wingServo.write(settings.idleAngle);
+        servos.SetWingAngle(settings.idleAngle);
         break;
       case 2:
-        rotateServo.write(50);
+        servos.SetRotateAngle(50);
         delay(1000);
-        rotateServo.write(90);
+        servos.SetRotateAngle(90);
         break;
       case 3:
-        rotateServo.write(130);
+        servos.SetRotateAngle(130);
         delay(1000);
-        rotateServo.write(90);
+        servos.SetRotateAngle(90);
         break;
       case 4:
         analogWrite(GUN_LEDS, 255);
@@ -254,20 +250,20 @@ void UpdateStateBehaviour() {
         analogWrite(GUN_LEDS, 0);
         break;
       case 5:
-        fill_solid(leds, NUM_LEDS, CRGB::Red);
-        FastLED.show();
-        delay(1000);
-        fill_solid(leds, NUM_LEDS, CRGB::Green);
-        FastLED.show();
-        delay(1000);
-        fill_solid(leds, NUM_LEDS, CRGB::Blue);
-        FastLED.show();
-        delay(1000);
-        fill_solid(leds, NUM_LEDS, CRGB::Black);
-        FastLED.show();
+        // fill_solid(leds, NUM_LEDS, CRGB::Red);
+        // FastLED.show();
+        // delay(1000);
+        // fill_solid(leds, NUM_LEDS, CRGB::Green);
+        // FastLED.show();
+        // delay(1000);
+        // fill_solid(leds, NUM_LEDS, CRGB::Blue);
+        // FastLED.show();
+        // delay(1000);
+        // fill_solid(leds, NUM_LEDS, CRGB::Black);
+        // FastLED.show();
         break;
       case 6:
-        myDFPlayer.playFolder(1, random(1, 9));
+        audio.PlaySound(1, random(1, 9));
         break;
     }
     diagnoseAction = -1;

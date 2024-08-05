@@ -3,111 +3,66 @@
 
 #include <ArduinoOTA.h>
 #include <AsyncElegantOTA.h>
+#include <DNSServer.h>
+#include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <DNSServer.h>
-#include <ESP8266WiFi.h>
 #include <WebSocketsServer.h>
 
-#include "Settings.h"
-#include "StateBehaviour.h"
 #include "index.html.gz.h"
-
-bool useCaptive = false;
-const byte DNS_PORT = 53;
-DNSServer dnsServer;
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
+DNSServer dnsServer;
+
+bool useCaptive = false;
+const byte DNS_PORT = 53;
 bool websocketStarted;
 unsigned long nextWebSocketUpdateTime = 0;
 
-void InitServer() {
-  Settings settings = LoadSettings();
-  WiFi.hostname("turret");
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(settings.wifiSSID, settings.wifiPassword);
-
-  unsigned long m = millis();
-  Serial.println("Starting wifi");
-  while (WiFi.status() != WL_CONNECTED) {
-    UpdateLEDPreloader();
-    Serial.print(".");
-    delay(50);
-    if (m + 10000 < millis()) {
-      WiFi.disconnect();
-      break;
-    }
-  }
-
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Not connected");
-    WiFi.disconnect();
-    WiFi.mode(WIFI_AP);
-
-    // Preemtive scan of networks, just in case.
-    WiFi.scanNetworks(true);
-
-    IPAddress local_IP(192, 168, 4, 1);
-    IPAddress gateway(192, 168, 4, 1);
-    IPAddress subnet(255, 255, 255, 0);
-
-    useCaptive = true;
-
-    WiFi.softAPConfig(local_IP, gateway, subnet);
-    WiFi.softAP("Portal Turret");
-    dnsServer.start(DNS_PORT, "*", local_IP);
-
-  } else {
-    Serial.println("Connected");
-    Serial.println(WiFi.localIP());
-  }
-
-  AsyncElegantOTA.begin(&server);
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH) {
-      type = "sketch";
-    } else {  // U_FS
-      type = "filesystem";
-    }
-
-    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
-    // Serial.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    // Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    // Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    // Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) {
-      // Serial.println("Auth Failed");
-    } else if (error == OTA_BEGIN_ERROR) {
-      // Serial.println("Begin Failed");
-    } else if (error == OTA_CONNECT_ERROR) {
-      // Serial.println("Connect Failed");
-    } else if (error == OTA_RECEIVE_ERROR) {
-      // Serial.println("Receive Failed");
-    } else if (error == OTA_END_ERROR) {
-      // Serial.println("End Failed");
-    }
-  });
-  ArduinoOTA.setHostname("turret");
-  ArduinoOTA.begin();
-}
-
-void requestReboot() {
+void RequestReboot() {
   while (true) {
     int i = 0;
   }
 }
 
+void UpdateServer() {
+  webSocket.loop();
+  ArduinoOTA.handle();
+
+  if (useCaptive) {
+    dnsServer.processNextRequest();
+  }
+
+  if (websocketStarted && millis() > nextWebSocketUpdateTime) {
+
+    nextWebSocketUpdateTime = millis() + 30;
+    int a = analogRead(A0);
+
+    int16_t x = sensors.smoothX / MEASUREMENTS;
+    int16_t y = sensors.smoothY / MEASUREMENTS;
+    int16_t z = sensors.smoothZ / MEASUREMENTS;
+
+    uint8_t values[] = {
+      (x >> 8),
+      (x & 0xFF),
+      (y >> 8),
+      (y & 0xFF),
+      (z >> 8),
+      (z & 0xFF),
+      (!sensors.WingsAreOpen() ? 1 : 0),
+      (sensors.IsDetectingMotion() ? 1 : 0),
+      ((uint8_t)(a >> 8)) & 0xFF,
+      ((uint8_t)a) & 0xFF,
+      (uint8_t)currentState,
+      (audio.IsPlayingAudio() ? 1 : 0),
+    };
+    webSocket.broadcastBIN(values, 12);
+  }
+}
+
 void StartWebServer() {
-  Settings settings = LoadSettings();
 
   Serial.println("Start webserver");
 
@@ -181,16 +136,16 @@ void StartWebServer() {
           request->getParam("tippedOverTreshold", true)->value().toFloat();
       }
 
-      SaveSettings(settings);
+      settings.SaveSettings();
       request->send(200, "text/html", "ok");
-      requestReboot();
+      RequestReboot();
     };
 
   server.on("/setup", HTTP_POST, settingsHandler);
   server.on("/settings", HTTP_POST, settingsHandler);
 
   server.on("/get_settings", HTTP_GET, [&](AsyncWebServerRequest *request) {
-    request->send(200, "application/json", SettingsToJSON(settings));
+    request->send(200, "application/json", settings.SettingsToJSON());
   });
 
   server.on("/scan", HTTP_GET, [&](AsyncWebServerRequest *request) {
@@ -224,7 +179,7 @@ void StartWebServer() {
     if (request->hasParam("mode", true)) {
       AsyncWebParameter *modeParam = request->getParam("mode", true);
       currentTurretMode = (TurretMode)modeParam->value().toInt();
-      //currentRotateAngle = 90;
+      // currentRotateAngle = 90;
       request->send(200, "text/html",
                     currentTurretMode == TurretMode::Automatic ? "Automatic"
                                                                : "Manual");
@@ -274,29 +229,30 @@ void StartWebServer() {
     }
   });
 
-  server.on("/set_angle", HTTP_POST, [&](AsyncWebServerRequest *request) {
-    if (request->hasParam("angle", true)) {
-      AsyncWebParameter *angleParam = request->getParam("angle", true);
-      AsyncWebParameter *servoParam = request->getParam("servo", true);
-      int angle = angleParam->value().toInt();
-      int servo = servoParam->value().toInt();
-      currentMoveSpeed = angle;
-      if (servo == 0) {
-        wingServo.write(settings.idleAngle + settings.wingRotateDirection * angle);
-      } else {
-        rotateServo.write(90 + angle);
-      }
-      request->send(200, "text/html", "Angle set");
-    } else {
-      request->send(200, "text/html", "No angle sent");
-    }
-  });
+  // server.on("/set_angle", HTTP_POST, [&](AsyncWebServerRequest *request) {
+  //   if (request->hasParam("angle", true)) {
+  //     AsyncWebParameter *angleParam = request->getParam("angle", true);
+  //     AsyncWebParameter *servoParam = request->getParam("servo", true);
+  //     int angle = angleParam->value().toInt();
+  //     int servo = servoParam->value().toInt();
+  //     currentMoveSpeed = angle;
+  //     if (servo == 0) {
+  //       servos.SetWingAngle(settings.idleAngle +
+  //       settings.wingRotateDirection * angle);
+  //     } else {
+  //       servos.SetRotateAngle(90 + angle);
+  //     }
+  //     request->send(200, "text/html", "Angle set");
+  //   } else {
+  //     request->send(200, "text/html", "No angle sent");
+  //   }
+  // });
 
   server.on("/reset_wifi", HTTP_GET, [&](AsyncWebServerRequest *request) {
     WiFi.disconnect();
     settings.wifiSSID = "";
     settings.wifiPassword = "";
-    SaveSettings(settings);
+    settings.SaveSettings();
     request->send(200, "text/html", "Wifi reset");
   });
 
@@ -304,47 +260,6 @@ void StartWebServer() {
 
   Serial.println("server.begin()");
   server.begin();
-}
-
-void UpdateServer() {
-  webSocket.loop();
-  ArduinoOTA.handle();
-
-  if (useCaptive) {
-    dnsServer.processNextRequest();
-  }
-
-  if (websocketStarted && millis() > nextWebSocketUpdateTime) {
-
-    nextWebSocketUpdateTime = millis() + 30;
-    int a = analogRead(A0);
-
-    int16_t x = smoothX / measurements;
-    int16_t y = smoothY / measurements;
-    int16_t z = smoothZ / measurements;
-
-    uint8_t values[] = {
-      (x >> 8),
-      (x & 0xFF),
-      (y >> 8),
-      (y & 0xFF),
-      (z >> 8),
-      (z & 0xFF),
-      (!isOpen() ? 1 : 0),
-      (isDetectingMotion() ? 1 : 0),
-      ((uint8_t)(a >> 8)) & 0xFF,
-      ((uint8_t)a) & 0xFF,
-      (uint8_t)currentState,
-      (isPlayingAudio() ? 1 : 0),
-    };
-    webSocket.broadcastBIN(values, 12);
-  }
-}
-
-String processor(const String &var) {
-  if (var == "IP")
-    return WiFi.localIP().toString();
-  return String();
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
@@ -359,8 +274,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
     case WStype_BIN:
       switch (payload[0]) {
         case 0:
-          if (isOpen()) {
-            rotateServo.write(payload[1]);
+          if (sensors.WingsAreOpen()) {
+            servos.SetRotateAngle(payload[1]);
           }
           break;
         case 1:
@@ -368,11 +283,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
           break;
         case 2:
           if (payload[1] == 0) {
-            //currentRotateDirection = 0;
+            // currentRotateDirection = 0;
           } else if (payload[1] == 1) {
-            //currentRotateDirection = 1;
+            // currentRotateDirection = 1;
           } else if (payload[1] == 2) {
-            //currentRotateDirection = -1;
+            // currentRotateDirection = -1;
           }
           break;
       }
@@ -394,6 +309,92 @@ void StartWebSocket() {
                                       // message, go to function 'webSocketEvent'
   websocketStarted = true;
   // Serial.println("WebSocket server started.");
+}
+
+String processor(const String &var) {
+  if (var == "IP")
+    return WiFi.localIP().toString();
+  return String();
+}
+
+void StartServer() {
+
+  WiFi.hostname("turret");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(settings.wifiSSID, settings.wifiPassword);
+
+  unsigned long m = millis();
+  Serial.println("Starting wifi");
+  while (WiFi.status() != WL_CONNECTED) {
+    leds.UpdateLEDPreloader();
+    Serial.print(".");
+    delay(50);
+    if (m + 10000 < millis()) {
+      WiFi.disconnect();
+      break;
+    }
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Not connected");
+    WiFi.disconnect();
+    WiFi.mode(WIFI_AP);
+
+    // Preemtive scan of networks, just in case.
+    WiFi.scanNetworks(true);
+
+    IPAddress local_IP(192, 168, 4, 1);
+    IPAddress gateway(192, 168, 4, 1);
+    IPAddress subnet(255, 255, 255, 0);
+
+    useCaptive = true;
+
+    WiFi.softAPConfig(local_IP, gateway, subnet);
+    WiFi.softAP("Portal Turret");
+    dnsServer.start(DNS_PORT, "*", local_IP);
+
+  } else {
+    Serial.println("Connected");
+    Serial.println(WiFi.localIP());
+  }
+
+  AsyncElegantOTA.begin(&server);
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_FS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating FS this would be the place to unmount FS using
+    // FS.end() Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    // Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    // Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    // Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      // Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      // Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      // Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      // Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      // Serial.println("End Failed");
+    }
+  });
+  ArduinoOTA.setHostname("turret");
+  ArduinoOTA.begin();
+
+  StartWebServer();
+  StartWebSocket();
 }
 
 #endif
