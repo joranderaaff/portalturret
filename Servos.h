@@ -15,14 +15,16 @@
 
 class Servos {
 public:
-  Servo wingServo;
-  Servo rotateServo;
 
-  Servos(Settings &setings, Sensors &sensors)
+  Servos(Settings &settings, Sensors &sensors)
       : settings(settings), sensors(sensors) {}
       
   void Begin() {
+    Serial.println("Set up wings:");
+    Serial.println(settings.wingPin);
     wingServo.attach(settings.wingPin);
+    Serial.println("Set up rotation:");
+    Serial.println(settings.rotatePin);
     rotateServo.attach(settings.rotatePin);
   }
 
@@ -45,6 +47,8 @@ public:
 private:
   Settings &settings;
   Sensors &sensors;
+  Servo wingServo;
+  Servo rotateServo;
   int currentMoveSpeed = 0;
 };
 #endif

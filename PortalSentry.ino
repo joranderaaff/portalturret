@@ -23,12 +23,14 @@ Audio audio(settings, softwareSerial);
 #include "Server.h"
 
 void setup() {
+  Serial.begin(115200);
   settings.Begin();
   sensors.Begin();
   leds.Begin();
   servos.Begin();
-
   servos.CloseWings();
+  Serial.end();
+  audio.Begin();
 
   StartServer();
 
