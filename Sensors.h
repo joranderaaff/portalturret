@@ -17,9 +17,10 @@ public:
   int32_t smoothZ;
   bool accelerometerBuffered;
 
-  Sensors(Settings &settingsIn) : settings(settingsIn) {
+  Sensors(Settings &settingsIn)
+    : settings(settingsIn) {
   }
-  
+
   void Begin() {
     accel = Adafruit_ADXL345_Unified();
     accel.begin();
@@ -27,7 +28,9 @@ public:
     pinMode(WING_SWITCH, INPUT_PULLUP);
   }
 
-  bool WingsAreOpen() { return digitalRead(WING_SWITCH) == HIGH; }
+  bool WingsAreOpen() {
+    return digitalRead(WING_SWITCH) == HIGH;
+  }
 
   void UpdateSensors() {
     sensors_event_t event;
@@ -50,20 +53,43 @@ public:
       accelerometerBuffered = true;
       currentMeasurement = 0;
     }
+
+
+    // For some reason we need to cache this value, as checking it every loop
+    // causes the webserver to freeze.
+    // So we check every 100ms
+    // https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
+    unsigned long curMillis = millis();
+    if (curMillis > lastMotionCheckMillis + 100) {
+      float deltaTime = (curMillis - lastMotionCheckMillis) / 1000.0;
+      bool pirActive = analogRead(A0) > 512;
+      float previousMotionLerp = motionLerp;
+      if (pirActive) {
+        motionLerp += deltaTime / 2.0;
+      } else {
+        motionLerp -= deltaTime / 0.25;
+      }
+      if (motionLerp >= 1.0 && previousMotionLerp < 1.0) {
+        isDetectingMotion = true;
+      }
+      if (motionLerp <= 0.0 && previousMotionLerp > 0.0) {
+        isDetectingMotion = false;
+      }
+      motionLerp = constrain(motionLerp, 0.0, 1.0);
+      lastMotionCheckMillis = curMillis;
+    }
   }
 
   bool IsDetectingMotion() {
-    unsigned long curMillis = millis();
-    if (curMillis > lastMotionCheck + 50) {
-      isDetectingMotionCached = analogRead(A0) > 512;
-      lastMotionCheck = curMillis;
-    }
-    return isDetectingMotionCached;
+    return isDetectingMotion;
   }
 
 private:
   Settings &settings;
   Adafruit_ADXL345_Unified accel;
+
+  const float moveStartDuration = 1;
+  const float moveEndDuration = 0.3;
 
   int currentMeasurement;
   int16_t accelX[MEASUREMENTS];
@@ -73,10 +99,8 @@ private:
   bool wingsOpen;
   bool wasOpen;
 
-  // For some reason we need to cache this value, as checking it every loop
-  // causes the webserver to freeze.
-  // //https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
-  bool isDetectingMotionCached;
-  unsigned long lastMotionCheck;
+  bool isDetectingMotion;
+  unsigned long lastMotionCheckMillis;
+  float motionLerp = 0;
 };
 #endif

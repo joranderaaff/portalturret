@@ -4,11 +4,18 @@
 #include <FastLED.h>
 
 // Pins
-#define CENTER_LED D3
 #define RING_LEDS D8
+#ifdef LEGACY
+#define CENTER_LED 0
+#define GUN_RIGHT 13
+#define GUN_LEFT 12
+#else
+#define CENTER_LED D3
 #define GUN_LEDS D4
+#endif
 
 #define NUM_LEDS 8
+
 class LEDs {
 public:
   bool alarm;
@@ -38,6 +45,29 @@ public:
       leds[i] = CRGB(255, 0, 0);
       FastLED.show();
     }
+  }
+
+  void ToggleGUNLEDs(bool on) {
+#ifdef LEGACY
+    if (on) {
+      pwm.setPWM(GUN_RIGHT, 4096, 0);
+      pwm.setPWM(GUN_LEFT, 4096, 0);
+    } else {
+      pwm.setPWM(GUN_RIGHT, 0, 4096);
+      pwm.setPWM(GUN_LEFT, 0, 4096);
+    }
+#else
+    analogWrite(GUN_LEDS, on ? 255 : 0);
+#endif
+  }
+
+  void SetCenterLEDBrightness(uint8_t brightness) {
+#ifdef LEGACY
+    int br = brightness * 16;
+    pwm.setPWM(CENTER_LED, br, 4096 - br);
+#else
+    analogWrite(CENTER_LED, brightness);
+#endif
   }
 
   void UpdateLEDs() {

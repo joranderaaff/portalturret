@@ -153,9 +153,9 @@ COROUTINE(engagingRoutine) {
         servos.SetRotateAngle(
             map(millis(), fromTime, toTime, fromAngle, toAngle));
       }
-      analogWrite(GUN_LEDS, 255);
+      leds.ToggleGUNLEDs(true);
       COROUTINE_DELAY(5);
-      analogWrite(GUN_LEDS, 0);
+      leds.ToggleGUNLEDs(false);
       COROUTINE_DELAY(30);
     }
   }
@@ -254,7 +254,7 @@ COROUTINE(shutdownRoutine) {
     uint16_t s = (t / 1000.0 * 15.0) * 255;
     uint8_t red = map(t, fromTime, toTime, inoise8(s), 0);
 
-    analogWrite(CENTER_LED, red);
+    leds.SetCenterLEDBrightness(red);
 
     leds.FillLEDRing();
     
@@ -287,7 +287,7 @@ COROUTINE(rebootRoutine) {
       t = toTime;
     uint16_t s = (t / 1000.0 * 15.0) * 255;
     uint8_t red = map(t, fromTime, toTime, 0, 255);
-    analogWrite(CENTER_LED, red);
+    leds.SetCenterLEDBrightness(red);
     leds.FillLEDRing();
     COROUTINE_YIELD();
   }
@@ -319,9 +319,9 @@ COROUTINE(manualEngagingRoutine) {
     COROUTINE_DELAY(200);
 
     while (toTime > millis()) {
-      analogWrite(GUN_LEDS, 255);
+      leds.ToggleGUNLEDs(true);
       COROUTINE_DELAY(5);
-      analogWrite(GUN_LEDS, 0);
+      leds.ToggleGUNLEDs(false);
       COROUTINE_DELAY(30);
     }
   }

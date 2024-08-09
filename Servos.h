@@ -10,27 +10,40 @@
 #define FREQ_MINIMUM 205 // 1ms is 1/20, of 4096
 #define FREQ_MAXIMUM 410 // 2ms is 2/20, of 4096
 
+#ifdef LEGACY
+#define GUN_RIGHT 13
+#define GUN_LEFT 12
+#define ROTATE_SERVO 8
+#define WING_SERVO 7
+#endif
 // Tweak these according to servo speed
 #define CLOSE_STOP_DELAY 100
 
 class Servos {
 public:
-
   Servos(Settings &settings, Sensors &sensors)
       : settings(settings), sensors(sensors) {}
-      
+
   void Begin() {
-    Serial.println("Set up wings:");
-    Serial.println(settings.wingPin);
     wingServo.attach(settings.wingPin);
-    Serial.println("Set up rotation:");
-    Serial.println(settings.rotatePin);
     rotateServo.attach(settings.rotatePin);
   }
 
-  void SetWingAngle(int angle) { wingServo.write(angle); }
+  void SetWingAngle(int angle) {
+#ifdef LEGACY
+    pwm.setPWM(WING_SERVO, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
+#else
+    wingServo.write(angle);
+#endif
+  }
 
-  void SetRotateAngle(int angle) { rotateServo.write(angle); }
+  void SetRotateAngle(int angle) {
+#ifdef LEGACY
+    pwm.setPWM(ROTATE_SERVO, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
+#else
+    rotateServo.write(angle);
+#endif
+  }
 
   void CloseWings() {
     SetRotateAngle(settings.centerAngle);

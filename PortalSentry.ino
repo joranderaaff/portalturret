@@ -1,6 +1,11 @@
 // General
 #include "Arduino.h"
 
+#ifdef LEGACY
+#include <Adafruit_PWMServoDriver.h>
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+#endif
+
 // Why do I have to include this here? Servo.h otherwise found twice?
 #include <ESPAsyncWebServer.h>
 

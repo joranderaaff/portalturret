@@ -249,9 +249,9 @@ void UpdateStateBehaviour() {
       servos.SetRotateAngle(90);
       break;
     case 4:
-      analogWrite(GUN_LEDS, 255);
+      leds.ToggleGUNLEDs(true);
       delay(1000);
-      analogWrite(GUN_LEDS, 0);
+      leds.ToggleGUNLEDs(false);
       break;
     case 5:
       // fill_solid(leds, NUM_LEDS, CRGB::Red);
