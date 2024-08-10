@@ -5,7 +5,7 @@
 #include "Servos.h"
 #include "Settings.h"
 
-enum class TurretMode { Automatic = 0, Manual = 1 };
+enum class TurretMode { Automatic = 0, Manual = 1, Idle = 2 };
 
 enum class TurretState {
   Idle = 0,
@@ -29,6 +29,7 @@ enum class ManualState {
 TurretMode currentTurretMode = TurretMode::Automatic;
 TurretState currentState = TurretState::Idle;
 ManualState currentManualState = ManualState::Idle;
+
 unsigned long detectTime = 0;
 unsigned long undetectTime = 0;
 unsigned long previousTime = 0;
@@ -224,7 +225,7 @@ void UpdateStateBehaviour() {
         break;
       }
     }
-  } else {
+  } else if(currentTurretMode == TurretMode::Manual) {
     switch (diagnoseAction) {
     case 0:
       servos.SetWingAngle(settings.idleAngle -

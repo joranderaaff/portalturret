@@ -10,6 +10,7 @@ public:
   String wifiSSID;
   String wifiPassword;
   uint8_t audioVolume = 10;
+  int startInManualMode = 0;
   int openDuration = 1000;
   int maxRotation = 50;
   int centerAngle = 90;
@@ -20,6 +21,7 @@ public:
   float panicTreshold = 3;
   float restTreshold = 1;
   float tippedOverTreshold = 5;
+
   Settings() {}
   void Begin() {
     if (!LittleFS.begin()) {
@@ -34,7 +36,7 @@ public:
     File file = LittleFS.open(settingsFilePath, "r");
     if (!file) {
       Serial.println("Failed to open settings file for reading");
-      return; // Return default settings
+      return;  // Return default settings
     }
 
     // Create a JSON document to read the settings
@@ -42,7 +44,7 @@ public:
     DeserializationError error = deserializeJson(doc, file);
     if (error) {
       Serial.println("Failed to parse settings file");
-      return; // Return default settings
+      return;  // Return default settings
     }
 
     // Assign values from JSON to settings structure
@@ -72,6 +74,8 @@ public:
       restTreshold = doc["restTreshold"].as<float>();
     if (doc.containsKey("tippedOverTreshold"))
       tippedOverTreshold = doc["tippedOverTreshold"].as<float>();
+    if (doc.containsKey("startInManualMode"))
+      startInManualMode = doc["startInManualMode"].as<int>();
 
     file.close();
   }
@@ -100,6 +104,7 @@ public:
     doc["panicTreshold"] = panicTreshold;
     doc["restTreshold"] = restTreshold;
     doc["tippedOverTreshold"] = tippedOverTreshold;
+    doc["startInManualMode"] = startInManualMode;
 
     Serial.println("Updated JSON");
 
@@ -125,6 +130,7 @@ public:
     json += "\"maxRotation\":" + String(maxRotation) + ",";
     json += "\"panicTreshold\":" + String(panicTreshold) + ",";
     json += "\"restTreshold\":" + String(restTreshold) + ",";
+    json += "\"startInManualMode\":" + String(startInManualMode) + ",";
     json += "\"tippedOverTreshold\":" + String(tippedOverTreshold);
     json += "}";
     return json;

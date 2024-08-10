@@ -39,6 +39,8 @@ void setup() {
 
   StartServer();
 
+  currentTurretMode = settings.startInManualMode == 1 ? TurretMode::Manual : TurretMode::Automatic;
+
   leds.FillLEDRing();
 }
 
