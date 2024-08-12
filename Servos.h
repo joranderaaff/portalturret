@@ -6,10 +6,6 @@
 #include "Settings.h"
 #include <Servo.h>
 
-#define FREQ 50          // one clock is 20 ms
-#define FREQ_MINIMUM 205 // 1ms is 1/20, of 4096
-#define FREQ_MAXIMUM 410 // 2ms is 2/20, of 4096
-
 #ifdef LEGACY
 #define GUN_RIGHT 13
 #define GUN_LEFT 12
@@ -22,11 +18,13 @@
 class Servos {
 public:
   Servos(Settings &settings, Sensors &sensors)
-      : settings(settings), sensors(sensors) {}
+    : settings(settings), sensors(sensors) {}
 
   void Begin() {
+#ifndef LEGACY
     wingServo.attach(settings.wingPin);
     rotateServo.attach(settings.rotatePin);
+#endif
   }
 
   void SetWingAngle(int angle) {

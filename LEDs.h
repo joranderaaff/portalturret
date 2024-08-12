@@ -23,7 +23,9 @@ public:
   LEDs() {}
 
   void Begin() {
+#ifndef LEGACY
     pinMode(GUN_LEDS, OUTPUT);
+#endif
     FastLED.addLeds<WS2812, RING_LEDS, GRB>(leds, NUM_LEDS);
     FastLED.setBrightness(84);
     for (int i = 0; i < NUM_LEDS; i++) {

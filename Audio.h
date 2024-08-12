@@ -6,7 +6,11 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
-#define BUSY D0
+#ifdef LEGACY
+#define AUDIO_BUSY A0
+#else
+#define AUDIO_BUSY D0
+#endif
 #define USE_AUDIO 1
 
 class Audio {
@@ -39,7 +43,11 @@ public:
 
   bool IsPlayingAudio() {
 #ifdef USE_AUDIO
-    return digitalRead(BUSY) == LOW;
+#ifdef LEGACY
+    return analogRead(AUDIO_BUSY) < 0XFF;
+#else
+    return digitalRead(AUDIO_BUSY) == LOW;
+#endif
 #else
     return false;
 #endif

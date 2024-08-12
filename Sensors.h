@@ -6,8 +6,14 @@
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>
 
+#ifdef LEGACY
+#define WING_SWITCH D0
+#define PID D7
+#else
 #define WING_SWITCH D5
 #define PID A0
+#endif
+
 #define MEASUREMENTS 10
 
 class Sensors {
@@ -22,10 +28,13 @@ public:
   }
 
   void Begin() {
+    pinMode(WING_SWITCH, INPUT_PULLUP);
+#ifndef LEGACY
+    pinMode(PID, INPUT);
+#endif
     accel = Adafruit_ADXL345_Unified();
     accel.begin();
     wasOpen = WingsAreOpen();
-    pinMode(WING_SWITCH, INPUT_PULLUP);
   }
 
   bool WingsAreOpen() {
@@ -61,22 +70,11 @@ public:
     // https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
     unsigned long curMillis = millis();
     if (curMillis > lastMotionCheckMillis + 100) {
-      float deltaTime = (curMillis - lastMotionCheckMillis) / 1000.0;
-      bool pirActive = analogRead(A0) > 512;
-      float previousMotionLerp = motionLerp;
-      if (pirActive) {
-        motionLerp += deltaTime / 2.0;
-      } else {
-        motionLerp -= deltaTime / 0.25;
-      }
-      if (motionLerp >= 1.0 && previousMotionLerp < 1.0) {
-        isDetectingMotion = true;
-      }
-      if (motionLerp <= 0.0 && previousMotionLerp > 0.0) {
-        isDetectingMotion = false;
-      }
-      motionLerp = constrain(motionLerp, 0.0, 1.0);
-      lastMotionCheckMillis = curMillis;
+#ifdef LEGACY
+      isDetectingMotion = digitalRead(PID) == HIGH;
+#else
+      isDetectingMotion = analogRead(PID) > 0xFF;
+#endif
     }
   }
 
