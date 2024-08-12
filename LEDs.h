@@ -65,8 +65,8 @@ public:
 
   void SetCenterLEDBrightness(uint8_t brightness) {
 #ifdef LEGACY
-    int br = brightness * 16;
-    pwm.setPWM(CENTER_LED, br, 4096 - br);
+    int br = brightness << 4;
+    pwm.setPWM(CENTER_LED, 0, br);
 #else
     analogWrite(CENTER_LED, brightness);
 #endif
