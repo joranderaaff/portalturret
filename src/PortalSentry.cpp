@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-#define LEGACY 1
+//#define LEGACY 1
 
 #ifdef LEGACY
 #include <Adafruit_PWMServoDriver.h>
