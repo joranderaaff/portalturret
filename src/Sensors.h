@@ -1,7 +1,7 @@
 #ifndef PT_SENSORS
 #define PT_SENSORS
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "Settings.h"
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>

@@ -1,6 +1,6 @@
 // General
-#include "Arduino.h"
-#include "SoftwareSerial.h"
+#include <Arduino.h>
+#include <SoftwareSerial.h>
 
 #define LEGACY 1
 
@@ -33,7 +33,7 @@ Audio audio(settings, softwareSerial);
 
 #include "Routines.h"
 #include "StateBehaviour.h"
-#include "Server.h"
+#include "PortalServer.h"
 
 void setup() {
 
