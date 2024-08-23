@@ -11,7 +11,6 @@
 #else
 #define AUDIO_BUSY D0
 #endif
-#define USE_AUDIO 1
 
 class Audio {
 public:

@@ -42,13 +42,12 @@ void setup() {
   pwm.setPWMFreq(FREQ);
 #endif
 
-  Serial.begin(115200);
+  Serial.begin(74880);
   settings.Begin();
   sensors.Begin();
   leds.Begin();
   servos.Begin();
   servos.CloseWings();
-  Serial.end();
   audio.Begin();
 
   StartServer();
