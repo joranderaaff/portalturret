@@ -1,7 +1,7 @@
 #ifndef PT_ROUTINES
 #define PT_ROUTINES
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "LEDs.h"
 #include "Servos.h"
 #include "Settings.h"

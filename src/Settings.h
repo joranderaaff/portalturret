@@ -1,7 +1,7 @@
 #ifndef PT_SETTINGS
 #define PT_SETTINGS
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 

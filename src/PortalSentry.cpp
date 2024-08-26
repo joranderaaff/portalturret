@@ -1,8 +1,6 @@
 // General
-#include "Arduino.h"
-#include "SoftwareSerial.h"
-
-//#define LEGACY 1
+#include <Arduino.h>
+#include <SoftwareSerial.h>
 
 #ifdef LEGACY
 #include <Adafruit_PWMServoDriver.h>
@@ -33,7 +31,7 @@ Audio audio(settings, softwareSerial);
 
 #include "Routines.h"
 #include "StateBehaviour.h"
-#include "Server.h"
+#include "PortalServer.h"
 
 void setup() {
 
@@ -42,13 +40,15 @@ void setup() {
   pwm.setPWMFreq(FREQ);
 #endif
 
-  Serial.begin(115200);
+  Serial.begin(74880);
   settings.Begin();
   sensors.Begin();
   leds.Begin();
   servos.Begin();
   servos.CloseWings();
+#if defined(USE_AUDIO) && not defined(LEGACY)
   Serial.end();
+#endif
   audio.Begin();
 
   StartServer();

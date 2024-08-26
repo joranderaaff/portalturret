@@ -1,7 +1,7 @@
 #ifndef PT_STATE_BEHAVIOUR
 #define PT_STATE_BEHAVIOUR
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "Servos.h"
 #include "Settings.h"
 

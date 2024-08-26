@@ -1,17 +1,16 @@
 #ifndef PT_AUDIO
 #define PT_AUDIO
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "Settings.h"
-#include "SoftwareSerial.h"
-#include "DFRobotDFPlayerMini.h"
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
 
 #ifdef LEGACY
 #define AUDIO_BUSY A0
 #else
 #define AUDIO_BUSY D0
 #endif
-#define USE_AUDIO 1
 
 class Audio {
 public:
