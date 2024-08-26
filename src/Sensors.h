@@ -66,10 +66,10 @@ public:
 
     // For some reason we need to cache this value, as checking it every loop
     // causes the webserver to freeze.
-    // So we check every 100ms
+    // So we check every 500ms
     // https://github.com/me-no-dev/ESPAsyncWebServer/issues/944
     unsigned long curMillis = millis();
-    if (curMillis > lastMotionCheckMillis + 100) {
+    if (curMillis > lastMotionCheckMillis + 500) {
 #ifdef LEGACY
       isDetectingMotion = digitalRead(PID) == HIGH;
 #else
