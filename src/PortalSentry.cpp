@@ -2,8 +2,6 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-//#define LEGACY 1
-
 #ifdef LEGACY
 #include <Adafruit_PWMServoDriver.h>
 #define FREQ 50 // one clock is 20 ms
