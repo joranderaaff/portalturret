@@ -48,6 +48,9 @@ void setup() {
   leds.Begin();
   servos.Begin();
   servos.CloseWings();
+#if defined(USE_AUDIO) && not defined(LEGACY)
+  Serial.end();
+#endif
   audio.Begin();
 
   StartServer();
