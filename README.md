@@ -7,7 +7,7 @@ Homepage: https://joranderaaff.nl/portal-sentry/
 - Install [VSCode](https://code.visualstudio.com/download)
 - Install [PlatformIO](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
 - Install [nodejs](https://nodejs.org/en/download)
-- Open bash shell and type `make` to build webpage
+- In VSCode -> Open bash shell (or git bash) and type `./make.sh` to build webpage
 - In VSCode -> At the bottom, choose your env -> PlatformIO -> Upload
 
 # Environments
