@@ -22,6 +22,7 @@ build_project() {
     install_dependencies
     cd portal_turret_webpage
     npm run build
+    cp dist_compiled/index.html.gz.h ../generated/
     cd ..
 }
 

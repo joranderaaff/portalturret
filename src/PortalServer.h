@@ -10,7 +10,7 @@
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
 
-#include "../portal_turret_webpage/dist_compiled/index.html.gz.h"
+#include "../generated/index.html.gz.h"
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
