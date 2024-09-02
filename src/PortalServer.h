@@ -4,9 +4,15 @@
 #include <ArduinoOTA.h>
 #include <AsyncElegantOTA.h>
 #include <DNSServer.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPmDNS.h>
+#else
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
 #include <ESPAsyncTCP.h>
+#endif
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
 
@@ -167,7 +173,9 @@ void StartWebServer() {
         json += ",\"bssid\":\"" + WiFi.BSSIDstr(i) + "\"";
         json += ",\"channel\":" + String(WiFi.channel(i));
         json += ",\"secure\":" + String(WiFi.encryptionType(i));
+#ifndef ESP32
         json += ",\"hidden\":" + String(WiFi.isHidden(i) ? "true" : "false");
+#endif
         json += "}";
       }
       WiFi.scanDelete();
@@ -325,7 +333,7 @@ void StartServer() {
 
   WiFi.hostname("turret");
   WiFi.mode(WIFI_STA);
-  WiFi.begin(settings.wifiSSID, settings.wifiPassword);
+  WiFi.begin(settings.wifiSSID.c_str(), settings.wifiPassword.c_str());
 
   unsigned long m = millis();
   Serial.println("Starting wifi");

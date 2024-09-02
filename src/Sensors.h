@@ -6,12 +6,17 @@
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>
 
+#ifdef ESP32
+#define WING_SWITCH 7
+#define PID 2
+#else
 #ifdef LEGACY
 #define WING_SWITCH D0
 #define PID D7
 #else
 #define WING_SWITCH D5
 #define PID A0
+#endif
 #endif
 
 #define MEASUREMENTS 10
