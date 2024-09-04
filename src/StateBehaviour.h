@@ -255,17 +255,7 @@ void UpdateStateBehaviour() {
       leds.ToggleGUNLEDs(false);
       break;
     case 5:
-      // fill_solid(leds, NUM_LEDS, CRGB::Red);
-      // FastLED.show();
-      // delay(1000);
-      // fill_solid(leds, NUM_LEDS, CRGB::Green);
-      // FastLED.show();
-      // delay(1000);
-      // fill_solid(leds, NUM_LEDS, CRGB::Blue);
-      // FastLED.show();
-      // delay(1000);
-      // fill_solid(leds, NUM_LEDS, CRGB::Black);
-      // FastLED.show();
+      leds.TestLEDs();
       break;
     case 6:
       audio.PlaySound(1, random(1, 9));

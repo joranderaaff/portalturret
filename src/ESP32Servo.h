@@ -8,6 +8,7 @@ public:
   void attach(int pin, int channel, int freq, int resolution) {
     this->channel = channel;
     ledcSetup(channel, freq, resolution);
+    pinMode(pin, OUTPUT);
     ledcAttachPin(pin, channel);
   }
   void write(int value) {

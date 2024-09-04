@@ -138,6 +138,6 @@ public:
 
 private:
   // Define the file path for settings
-  const char *settingsFilePath = "settings.json";
+  const char *settingsFilePath = "/settings.json";
 };
 #endif

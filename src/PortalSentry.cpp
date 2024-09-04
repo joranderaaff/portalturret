@@ -16,7 +16,11 @@ SoftwareSerial softwareSerial(RX, TX);
 // Why do I have to include this here? Servo.h otherwise found twice?
 #include <ESPAsyncWebServer.h>
 
+#ifdef USE_AUDIO_CARL
+#include "Audio_carl.h"
+#else
 #include "Audio.h"
+#endif
 #include "LEDs.h"
 #include "Sensors.h"
 #include "Servos.h"
@@ -40,13 +44,17 @@ void setup() {
   pwm.setPWMFreq(FREQ);
 #endif
 
+#if defined(ESP32)
+  Serial.begin(115200);
+#else
   Serial.begin(74880);
+#endif
   settings.Begin();
   sensors.Begin();
   leds.Begin();
   servos.Begin();
   servos.CloseWings();
-#if defined(USE_AUDIO) && not defined(LEGACY)
+#if defined(USE_AUDIO) && not defined(LEGACY) && not defined(ESP32)
   Serial.end();
 #endif
   audio.Begin();

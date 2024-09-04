@@ -4,9 +4,8 @@
 #include <Arduino.h>
 #include "Settings.h"
 #include <SoftwareSerial.h>
-#ifdef USE_AUDIO
-#include <DFRobotDFPlayerMini.h>
-#endif
+#include "mp3_driver.h"
+#include "mp3_driver_factory.h"
 
 #include "pins.h"
 
@@ -17,44 +16,28 @@ public:
   }
 
   void Begin() {
-#ifdef USE_AUDIO
-    pinMode(BUSY, INPUT);
     softwareSerial.begin(9600);
-    myDFPlayer.begin(softwareSerial);
+    mp3_driver = new_mp3_driver(&softwareSerial, AUDIO_BUSY);
     delay(100);
-    myDFPlayer.volume(settings.audioVolume);
-#endif
+    mp3_driver->setVolume(settings.audioVolume);
+    mp3_driver->playSongFromFolder(1, 1+random(mp3_driver->getFileCountInFolder(1)));
   }
 
   void PlaySound(uint8_t folder, uint8_t file) {
-#ifdef USE_AUDIO
-    myDFPlayer.playFolder(folder, file);
-#endif
+    mp3_driver->playSongFromFolder(folder, file);
   }
 
   void Stop() {
-#ifdef USE_AUDIO
-    myDFPlayer.stop();
-#endif
+    mp3_driver->stop();
   }
 
   bool IsPlayingAudio() {
-#ifdef USE_AUDIO
-#ifdef LEGACY
-    return analogRead(AUDIO_BUSY) < 0XFF;
-#else
-    return digitalRead(AUDIO_BUSY) == LOW;
-#endif
-#else
-    return false;
-#endif
+    return mp3_driver->isBusy();
   }
 private:
   Settings &settings;
   SoftwareSerial &softwareSerial;
-#ifdef USE_AUDIO
-  DFRobotDFPlayerMini myDFPlayer;
-#endif
+  Mp3Driver* mp3_driver;
 };
 
 #endif

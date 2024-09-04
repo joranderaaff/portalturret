@@ -93,6 +93,20 @@ public:
     }
   }
 
+  void TestLEDs() {
+    fill_solid(leds, NUM_LEDS, CRGB::Red);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Green);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Blue);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
+  }
+
 private:
   CRGB leds[NUM_LEDS];
   unsigned long nextLEDUpdateTime = 0;

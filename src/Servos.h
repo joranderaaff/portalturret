@@ -26,8 +26,8 @@ public:
 
   void Begin() {
 #ifdef ESP32
-  wingServo.attach(settings.wingPin, 1, 50, 13);
-  rotateServo.attach(settings.rotatePin, 2, 50, 13);
+  wingServo.attach(SERVO_WING, 1, 50, 13);
+  rotateServo.attach(SERVO_ROTATE, 2, 50, 13);
 #else
 #ifndef LEGACY
   wingServo.attach(settings.wingPin);
