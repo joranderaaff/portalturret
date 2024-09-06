@@ -12,5 +12,5 @@ Homepage: https://joranderaaff.nl/portal-sentry/
 
 # Environments
 
-- `esp8266_d1_mini` for v2
-- `esp8266_d1_mini_legacy` for v1
+- `esp8266_d1_mini` for v2 (custom PCB)
+- `esp8266_d1_mini_legacy` for v1 (PCA Board)
