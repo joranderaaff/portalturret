@@ -4,6 +4,11 @@
 #include <FastLED.h>
 
 // Pins
+#ifdef ESP32
+#define CENTER_LED 18
+#define GUN_LEDS 16
+#define RING_LEDS 12
+#else
 #define RING_LEDS D8
 #ifdef LEGACY
 #define CENTER_LED 0
@@ -12,6 +17,7 @@
 #else
 #define CENTER_LED D3
 #define GUN_LEDS D4
+#endif
 #endif
 
 #define NUM_LEDS 8
@@ -85,6 +91,20 @@ public:
         FastLED.show();
       }
     }
+  }
+
+  void TestLEDs() {
+    fill_solid(leds, NUM_LEDS, CRGB::Red);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Green);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Blue);
+    FastLED.show();
+    delay(1000);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
   }
 
 private:

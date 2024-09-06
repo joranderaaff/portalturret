@@ -4,7 +4,11 @@
 #include <Arduino.h>
 #include "Sensors.h"
 #include "Settings.h"
+#ifdef ESP32
+#include "ESP32Servo.h"
+#else
 #include <Servo.h>
+#endif
 
 #ifdef LEGACY
 #define GUN_RIGHT 13
@@ -21,9 +25,14 @@ public:
     : settings(settings), sensors(sensors) {}
 
   void Begin() {
+#ifdef ESP32
+  wingServo.attach(SERVO_WING, 1, 50, 13);
+  rotateServo.attach(SERVO_ROTATE, 2, 50, 13);
+#else
 #ifndef LEGACY
-    wingServo.attach(settings.wingPin);
-    rotateServo.attach(settings.rotatePin);
+  wingServo.attach(settings.wingPin);
+  rotateServo.attach(settings.rotatePin);
+#endif
 #endif
   }
 
