@@ -7,7 +7,7 @@
 #include "mp3_driver.h"
 #include "mp3_driver_factory.h"
 
-#include "pins.h"
+#include "Pins.h"
 
 class Audio {
 public:

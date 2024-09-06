@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include "Pins.h"
 
 class Settings {
 public:
@@ -16,8 +17,8 @@ public:
   int centerAngle = 90;
   int idleAngle = 90;
   int wingRotateDirection = 1;
-  int wingPin = 12;
-  int rotatePin = 13;
+  int wingPin = SERVO_WING;
+  int rotatePin = SERVO_ROTATE;
   float panicTreshold = 3;
   float restTreshold = 1;
   float tippedOverTreshold = 5;

@@ -8,7 +8,7 @@
 #include <DFRobotDFPlayerMini.h>
 #endif
 
-#include "pins.h"
+#include "Pins.h"
 
 class Audio {
 public:
