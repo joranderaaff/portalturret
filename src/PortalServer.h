@@ -5,9 +5,9 @@
 #include <AsyncElegantOTA.h>
 #include <DNSServer.h>
 #ifdef ESP32
-#include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPmDNS.h>
+#include <WiFi.h>
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
@@ -51,18 +51,18 @@ void UpdateServer() {
     int16_t z = sensors.smoothZ / MEASUREMENTS;
 
     uint8_t values[] = {
-      (x >> 8),
-      (x & 0xFF),
-      (y >> 8),
-      (y & 0xFF),
-      (z >> 8),
-      (z & 0xFF),
-      (!sensors.WingsAreOpen() ? 1 : 0),
-      (sensors.IsDetectingMotion() ? 1 : 0),
-      ((uint8_t)(a >> 8)) & 0xFF,
-      ((uint8_t)a) & 0xFF,
-      (uint8_t)currentState,
-      (audio.IsPlayingAudio() ? 1 : 0),
+        (x >> 8),
+        (x & 0xFF),
+        (y >> 8),
+        (y & 0xFF),
+        (z >> 8),
+        (z & 0xFF),
+        (!sensors.WingsAreOpen() ? 1 : 0),
+        (sensors.IsDetectingMotion() ? 1 : 0),
+        ((uint8_t)(a >> 8)) & 0xFF,
+        ((uint8_t)a) & 0xFF,
+        (uint8_t)currentState,
+        (audio.IsPlayingAudio() ? 1 : 0),
     };
     webSocket.broadcastBIN(values, 12);
   }
@@ -79,7 +79,7 @@ void StartWebServer() {
 
   ArRequestHandlerFunction siteHandler = [](AsyncWebServerRequest *request) {
     AsyncWebServerResponse *response = request->beginResponse_P(
-      200, "text/html", index_html_gz, index_html_gz_len);
+        200, "text/html", index_html_gz, index_html_gz_len);
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   };
@@ -92,64 +92,64 @@ void StartWebServer() {
   server.onNotFound(siteHandler);
 
   ArRequestHandlerFunction settingsHandler =
-    [&](AsyncWebServerRequest *request) {
-      if (request->hasParam("ssid", true) && request->hasParam("pw", true)) {
-        settings.wifiSSID = request->getParam("ssid", true)->value();
-        settings.wifiPassword = request->getParam("pw", true)->value();
-      }
-      if (request->hasParam("audioVolume", true)) {
-        settings.audioVolume =
-          request->getParam("audioVolume", true)->value().toInt() & 0xFF;
-      }
-      if (request->hasParam("startInManualMode", true)) {
-        settings.startInManualMode =
-          request->getParam("startInManualMode", true)->value().toInt();
-      }
-      if (request->hasParam("centerAngle", true)) {
-        settings.centerAngle =
-          request->getParam("centerAngle", true)->value().toInt();
-      }
-      if (request->hasParam("idleAngle", true)) {
-        settings.idleAngle =
-          request->getParam("idleAngle", true)->value().toInt();
-      }
-      if (request->hasParam("wingRotateDirection", true)) {
-        settings.wingRotateDirection =
-          request->getParam("wingRotateDirection", true)->value().toInt();
-      }
-      if (request->hasParam("wingPin", true)) {
-        settings.wingPin =
-          request->getParam("wingPin", true)->value().toInt();
-      }
-      if (request->hasParam("rotatePin", true)) {
-        settings.rotatePin =
-          request->getParam("rotatePin", true)->value().toInt();
-      }
-      if (request->hasParam("openDuration", true)) {
-        settings.openDuration =
-          request->getParam("openDuration", true)->value().toInt();
-      }
-      if (request->hasParam("maxRotation", true)) {
-        settings.maxRotation =
-          request->getParam("maxRotation", true)->value().toInt();
-      }
-      if (request->hasParam("panicTreshold", true)) {
-        settings.panicTreshold =
-          request->getParam("panicTreshold", true)->value().toFloat();
-      }
-      if (request->hasParam("restTreshold", true)) {
-        settings.restTreshold =
-          request->getParam("restTreshold", true)->value().toFloat();
-      }
-      if (request->hasParam("tippedOverTreshold", true)) {
-        settings.tippedOverTreshold =
-          request->getParam("tippedOverTreshold", true)->value().toFloat();
-      }
+      [&](AsyncWebServerRequest *request) {
+        if (request->hasParam("ssid", true) && request->hasParam("pw", true)) {
+          settings.wifiSSID = request->getParam("ssid", true)->value();
+          settings.wifiPassword = request->getParam("pw", true)->value();
+        }
+        if (request->hasParam("audioVolume", true)) {
+          settings.audioVolume =
+              request->getParam("audioVolume", true)->value().toInt() & 0xFF;
+        }
+        if (request->hasParam("startInManualMode", true)) {
+          settings.startInManualMode =
+              request->getParam("startInManualMode", true)->value().toInt();
+        }
+        if (request->hasParam("centerAngle", true)) {
+          settings.centerAngle =
+              request->getParam("centerAngle", true)->value().toInt();
+        }
+        if (request->hasParam("idleAngle", true)) {
+          settings.idleAngle =
+              request->getParam("idleAngle", true)->value().toInt();
+        }
+        if (request->hasParam("wingRotateDirection", true)) {
+          settings.wingRotateDirection =
+              request->getParam("wingRotateDirection", true)->value().toInt();
+        }
+        if (request->hasParam("wingPin", true)) {
+          settings.wingPin =
+              request->getParam("wingPin", true)->value().toInt();
+        }
+        if (request->hasParam("rotatePin", true)) {
+          settings.rotatePin =
+              request->getParam("rotatePin", true)->value().toInt();
+        }
+        if (request->hasParam("openDuration", true)) {
+          settings.openDuration =
+              request->getParam("openDuration", true)->value().toInt();
+        }
+        if (request->hasParam("maxRotation", true)) {
+          settings.maxRotation =
+              request->getParam("maxRotation", true)->value().toInt();
+        }
+        if (request->hasParam("panicTreshold", true)) {
+          settings.panicTreshold =
+              request->getParam("panicTreshold", true)->value().toFloat();
+        }
+        if (request->hasParam("restTreshold", true)) {
+          settings.restTreshold =
+              request->getParam("restTreshold", true)->value().toFloat();
+        }
+        if (request->hasParam("tippedOverTreshold", true)) {
+          settings.tippedOverTreshold =
+              request->getParam("tippedOverTreshold", true)->value().toFloat();
+        }
 
-      settings.SaveSettings();
-      request->send(200, "text/html", "ok");
-      RequestReboot();
-    };
+        settings.SaveSettings();
+        request->send(200, "text/html", "ok");
+        RequestReboot();
+      };
 
   server.on("/setup", HTTP_POST, settingsHandler);
   server.on("/settings", HTTP_POST, settingsHandler);
@@ -280,45 +280,41 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 
   // When a WebSocket message is received
   switch (type) {
-    case WStype_ERROR:
-      // Serial.printf("Error: [%f]", payload);
-      break;
-    case WStype_BIN:
-      switch (payload[0]) {
-        case 0:
-          if (sensors.WingsAreOpen()) {
-            servos.SetRotateAngle(payload[1]);
-          }
-          break;
-        case 1:
-          setManualState(ManualState::Firing);
-          break;
-        case 2:
-          if (payload[1] == 0) {
-            // currentRotateDirection = 0;
-          } else if (payload[1] == 1) {
-            // currentRotateDirection = 1;
-          } else if (payload[1] == 2) {
-            // currentRotateDirection = -1;
-          }
-          break;
+  case WStype_ERROR:
+    // Serial.printf("Error: [%f]", payload);
+    break;
+  case WStype_BIN:
+    switch (payload[0]) {
+    case 0:
+      if (sensors.WingsAreOpen()) {
+        servos.SetRotateAngle(payload[1]);
       }
       break;
-    case WStype_DISCONNECTED:  // if the websocket is disconnected
+    case 1:
+      setManualState(ManualState::Firing);
       break;
-    case WStype_CONNECTED:  // if a new websocket connection is established
-      IPAddress ip = webSocket.remoteIP(num);
-      // Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
-      // ip[1], ip[2], ip[3], payload);
+    case 2:
+      servos.SetRotateAngle(map(payload[1], 0, 180,
+                                settings.centerAngle - settings.maxRotation,
+                                settings.centerAngle + settings.maxRotation));
       break;
+    }
+    break;
+  case WStype_DISCONNECTED: // if the websocket is disconnected
+    break;
+  case WStype_CONNECTED: // if a new websocket connection is established
+    IPAddress ip = webSocket.remoteIP(num);
+    // Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
+    // ip[1], ip[2], ip[3], payload);
+    break;
   }
 }
 
 void StartWebSocket() {
   // Start a WebSocket server
   webSocket.begin();
-  webSocket.onEvent(webSocketEvent);  // if there's an incomming websocket
-                                      // message, go to function 'webSocketEvent'
+  webSocket.onEvent(webSocketEvent); // if there's an incomming websocket
+                                     // message, go to function 'webSocketEvent'
   websocketStarted = true;
   // Serial.println("WebSocket server started.");
 }
@@ -375,7 +371,7 @@ void StartServer() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
-    } else {  // U_FS
+    } else { // U_FS
       type = "filesystem";
     }
 
