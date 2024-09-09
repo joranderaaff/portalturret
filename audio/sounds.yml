@@ -1,0 +1,83 @@
+"01":
+  - sound/npc/turret_floor/turret_active_1.wav
+  - sound/npc/turret_floor/turret_active_2.wav
+  - sound/npc/turret_floor/turret_active_3.wav
+  - sound/npc/turret_floor/turret_active_4.wav
+  - sound/npc/turret_floor/turret_active_5.wav
+  - sound/npc/turret_floor/turret_active_6.wav
+  - sound/npc/turret_floor/turret_active_7.wav
+  - sound/npc/turret_floor/turret_active_8.wav
+"02":
+  - sound/npc/turret_floor/turret_collide_1.wav
+  - sound/npc/turret_floor/turret_collide_2.wav
+  - sound/npc/turret_floor/turret_collide_3.wav
+  - sound/npc/turret_floor/turret_collide_4.wav
+  - sound/npc/turret_floor/turret_collide_5.wav
+"03":
+  - sound/npc/turret_floor/turret_deploy_1.wav
+  - sound/npc/turret_floor/turret_deploy_2.wav
+  - sound/npc/turret_floor/turret_deploy_3.wav
+  - sound/npc/turret_floor/turret_deploy_4.wav
+  - sound/npc/turret_floor/turret_deploy_5.wav
+  - sound/npc/turret_floor/turret_deploy_6.wav
+"04":
+  - sound/npc/turret_floor/turret_disabled_1.wav
+  - sound/npc/turret_floor/turret_disabled_2.wav
+  - sound/npc/turret_floor/turret_disabled_3.wav
+  - sound/npc/turret_floor/turret_disabled_4.wav
+  - sound/npc/turret_floor/turret_disabled_5.wav
+  - sound/npc/turret_floor/turret_disabled_6.wav
+  - sound/npc/turret_floor/turret_disabled_7.wav
+  - sound/npc/turret_floor/turret_disabled_8.wav
+"05":
+  - sound/npc/turret_floor/turret_pickup_1.wav
+  - sound/npc/turret_floor/turret_pickup_2.wav
+  - sound/npc/turret_floor/turret_pickup_3.wav
+  - sound/npc/turret_floor/turret_pickup_4.wav
+  - sound/npc/turret_floor/turret_pickup_5.wav
+  - sound/npc/turret_floor/turret_pickup_6.wav
+  - sound/npc/turret_floor/turret_pickup_7.wav
+  - sound/npc/turret_floor/turret_pickup_8.wav
+  - sound/npc/turret_floor/turret_pickup_9.wav
+  - sound/npc/turret_floor/turret_pickup_10.wav
+"06":
+  - sound/npc/turret_floor/turret_retire_1.wav
+  - sound/npc/turret_floor/turret_retire_2.wav
+  - sound/npc/turret_floor/turret_retire_3.wav
+  - sound/npc/turret_floor/turret_retire_4.wav
+  - sound/npc/turret_floor/turret_retire_5.wav
+  - sound/npc/turret_floor/turret_retire_6.wav
+  - sound/npc/turret_floor/turret_retire_7.wav
+"07":
+  - sound/npc/turret_floor/turret_autosearch_1.wav
+  - sound/npc/turret_floor/turret_autosearch_2.wav
+  - sound/npc/turret_floor/turret_autosearch_3.wav
+  - sound/npc/turret_floor/turret_autosearch_4.wav
+  - sound/npc/turret_floor/turret_autosearch_5.wav
+  - sound/npc/turret_floor/turret_autosearch_6.wav
+  - sound/npc/turret_floor/turret_search_1.wav
+  - sound/npc/turret_floor/turret_search_2.wav
+  - sound/npc/turret_floor/turret_search_3.wav
+  - sound/npc/turret_floor/turret_search_4.wav
+"08":
+  - sound/npc/turret_floor/turret_tipped_1.wav
+  - sound/npc/turret_floor/turret_tipped_2.wav
+  - sound/npc/turret_floor/turret_tipped_3.wav
+  - sound/npc/turret_floor/turret_tipped_4.wav
+  - sound/npc/turret_floor/turret_tipped_5.wav
+  - sound/npc/turret_floor/turret_tipped_6.wav
+"09":
+  - sound/npc/turret_floor/deploy.wav
+  - sound/npc/turret_floor/die.wav
+  - sound/npc/turret_floor/ping.wav
+  - sound/npc/turret_floor/retract.wav
+  - sound/npc/turret/turret_fire_4x_01.wav
+  - sound/npc/turret/turret_fire_4x_02.wav
+  - sound/npc/turret/turret_fire_4x_03.wav
+  - sound/npc/turret/turret_fire_4x_01.wav:sound/npc/turret/turret_fire_4x_02.wav@310:sound/npc/turret/turret_fire_4x_02.wav@310:sound/npc/turret/turret_fire_4x_02.wav@310:sound/npc/turret/turret_fire_4x_03.wav@310
+  - sound/npc/turret/turret_fire_4x_01.wav:sound/npc/turret/turret_fire_4x_02.wav@310:sound/npc/turret/turret_fire_4x_02.wav@310:sound/npc/turret/turret_fire_4x_03.wav@310
+  - sound/npc/turret_floor/active.wav
+  - sound/npc/turret_floor/alarm.wav
+  - sound/npc/turret_floor/alert.wav
+  - sound/npc/turret_floor/alert.wav:sound/npc/turret_floor/alert.wav@120:sound/npc/turret_floor/alert.wav@120:sound/npc/turret_floor/alert.wav@120
+

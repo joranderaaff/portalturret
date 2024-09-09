@@ -5,3 +5,14 @@
 .vscode/ipch
 .vscode/settings.json
 portalturret-draft/
+audio/out/
+audio/ffmpeg/
+audio/*.mp3
+audio/*.wav
+audio/audio.7z
+audio/english
+audio/german
+audio/french
+audio/spanish
+audio/russian
+fs

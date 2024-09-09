@@ -26,13 +26,13 @@ public:
   Settings() {}
   void Begin() {
     if (!LittleFS.begin()) {
-      while (true) {
-      }
-      return;
+      Serial.println("Littlefs error. Formatting...");
+      LittleFS.format();
+      LittleFS.begin();
     }
 
     // static Settings settings;
-    Serial.println("Settings not yet loaded, doing that now.");
+    Serial.println("Loading settings...");
 
     File file = LittleFS.open(settingsFilePath, "r");
     if (!file) {
@@ -79,6 +79,7 @@ public:
       startInManualMode = doc["startInManualMode"].as<int>();
 
     file.close();
+    Serial.println(SettingsToJSON());
   }
 
   // Function to save settings to the filesystem
