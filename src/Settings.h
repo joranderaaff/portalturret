@@ -10,7 +10,8 @@ class Settings {
 public:
   String wifiSSID;
   String wifiPassword;
-  String language;
+  String language = "english";
+  String audioUrl = "https://joranderaaff.nl/portal-sentry/audio/";
   uint8_t audioVolume = 10;
   int startInManualMode = 0;
   int openDuration = 1000;
@@ -56,6 +57,8 @@ public:
       wifiPassword = doc["wifiPassword"].as<String>();
     if (doc.containsKey("language"))
       language = doc["language"].as<String>();
+    if (doc.containsKey("audioUrl"))
+      audioUrl = doc["audioUrl"].as<String>();
     if (doc.containsKey("audioVolume"))
       audioVolume = doc["audioVolume"].as<int>();
     if (doc.containsKey("centerAngle"))
@@ -99,6 +102,7 @@ public:
     doc["wifiSSID"] = wifiSSID;
     doc["wifiPassword"] = wifiPassword;
     doc["language"] = language;
+    doc["audioUrl"] = audioUrl;
     doc["audioVolume"] = audioVolume;
     doc["centerAngle"] = centerAngle;
     doc["idleAngle"] = idleAngle;
@@ -127,6 +131,7 @@ public:
   String SettingsToJSON() {
     String json = "{";
     json += "\"language\":" + language + ",";
+    json += "\"audioUrl\":" + audioUrl + ",";
     json += "\"audioVolume\":" + String(audioVolume) + ",";
     json += "\"centerAngle\":" + String(centerAngle) + ",";
     json += "\"idleAngle\":" + String(idleAngle) + ",";

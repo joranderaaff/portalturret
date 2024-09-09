@@ -104,6 +104,10 @@ void StartWebServer() {
           settings.language =
               request->getParam("language", true)->value();
         }
+        if (request->hasParam("audioUrl", true)) {
+          settings.audioUrl =
+              request->getParam("audioUrl", true)->value();
+        }
         if (request->hasParam("audioVolume", true)) {
           settings.audioVolume =
               request->getParam("audioVolume", true)->value().toInt() & 0xFF;
