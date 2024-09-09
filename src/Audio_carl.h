@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "Settings.h"
 #include <SoftwareSerial.h>
+#include "log.h"
 #include "mp3_driver.h"
 #include "mp3_driver_factory.h"
 

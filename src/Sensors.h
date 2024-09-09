@@ -5,19 +5,7 @@
 #include "Settings.h"
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>
-
-#ifdef ESP32
-#define WING_SWITCH 7
-#define PID 2
-#else
-#ifdef LEGACY
-#define WING_SWITCH D0
-#define PID D7
-#else
-#define WING_SWITCH D5
-#define PID A0
-#endif
-#endif
+#include "pins.h"
 
 #define MEASUREMENTS 10
 
@@ -36,6 +24,9 @@ public:
     pinMode(WING_SWITCH, INPUT_PULLUP);
 #ifndef LEGACY
     pinMode(PID, INPUT);
+#endif
+#ifdef SDA
+    Wire.setPins(SDA, SCL);
 #endif
     accel = Adafruit_ADXL345_Unified();
     accel.begin();

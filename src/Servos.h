@@ -9,13 +9,8 @@
 #else
 #include <Servo.h>
 #endif
+#include "pins.h"
 
-#ifdef LEGACY
-#define GUN_RIGHT 13
-#define GUN_LEFT 12
-#define ROTATE_SERVO 8
-#define WING_SERVO 7
-#endif
 // Tweak these according to servo speed
 #define CLOSE_STOP_DELAY 100
 
@@ -38,7 +33,7 @@ public:
 
   void SetWingAngle(int angle) {
 #ifdef LEGACY
-    pwm.setPWM(WING_SERVO, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
+    pwm.setPWM(SERVO_WING, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
 #else
     wingServo.write(angle);
 #endif
@@ -46,7 +41,7 @@ public:
 
   void SetRotateAngle(int angle) {
 #ifdef LEGACY
-    pwm.setPWM(ROTATE_SERVO, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
+    pwm.setPWM(SERVO_ROTATE, 0, map(angle, 0, 180, FREQ_MINIMUM, FREQ_MAXIMUM));
 #else
     rotateServo.write(angle);
 #endif

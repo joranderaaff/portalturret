@@ -2,23 +2,7 @@
 #define PT_LEDS
 
 #include <FastLED.h>
-
-// Pins
-#ifdef ESP32
-#define CENTER_LED 18
-#define GUN_LEDS 16
-#define RING_LEDS 12
-#else
-#define RING_LEDS D8
-#ifdef LEGACY
-#define CENTER_LED 0
-#define GUN_RIGHT 13
-#define GUN_LEFT 12
-#else
-#define CENTER_LED D3
-#define GUN_LEDS D4
-#endif
-#endif
+#include "pins.h"
 
 #define NUM_LEDS 8
 
@@ -38,6 +22,15 @@ public:
       leds[i] = CRGB(0, 0, 0);
       FastLED.show();
     }
+  }
+
+  void UpdateLEDSystem() {
+    static char led_system = 0;
+    led_system = (led_system+1)%NUM_LEDS;
+    for (int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = i==led_system?CRGB::Blue:CRGB::Black;
+    }
+    FastLED.show();
   }
 
   void UpdateLEDPreloader() {

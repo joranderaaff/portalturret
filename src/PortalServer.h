@@ -17,6 +17,9 @@
 #include <WebSocketsServer.h>
 
 #include "../generated/index.html.gz.h"
+#include "../generated/audio.h"
+#include "ESP32Downloader.h"
+#include "config.h"
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
@@ -332,7 +335,7 @@ void StartServer() {
   WiFi.begin(settings.wifiSSID.c_str(), settings.wifiPassword.c_str());
 
   unsigned long m = millis();
-  Serial.println("Starting wifi");
+  Serial.println("Starting wifi @ " + settings.wifiSSID + "/" + settings.wifiPassword);
   while (WiFi.status() != WL_CONNECTED) {
     leds.UpdateLEDPreloader();
     Serial.print(".");
@@ -364,7 +367,36 @@ void StartServer() {
   } else {
     Serial.println("Connected");
     Serial.println(WiFi.localIP());
+#ifdef HARDWARE_V3
+    char filename[256];
+    for (int folder = 1; folder <= sizeof(sounds_number); folder++) {
+      snprintf(filename, 255, "/%02i", folder);
+      LittleFS.mkdir(filename);
+      for (int filenum = 1; filenum <= sounds_number[folder-1]; filenum++) {
+        snprintf(filename, 255, "/%02i/%03i.mp3", folder, filenum);
+        if (!LittleFS.exists(filename)) {
+          downloadFile(filename, filename);
+          leds.UpdateLEDSystem();
+        }
+      }
+    }
+#endif
   }
+
+  if (!digitalRead(0)) {
+    int i = 0;
+    while (!digitalRead(0)) {
+      delay(200);
+      leds.UpdateLEDSystem();
+      i+=1;
+      if (i > 10)
+        break;
+    }
+    if (!digitalRead(0)) {
+      LittleFS.format();
+    }
+  }
+
 
   AsyncElegantOTA.begin(&server);
   ArduinoOTA.onStart([]() {
