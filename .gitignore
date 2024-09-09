@@ -16,3 +16,5 @@ audio/french
 audio/spanish
 audio/russian
 fs
+*.bin
+mkfsimg.py
