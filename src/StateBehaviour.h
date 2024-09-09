@@ -260,6 +260,14 @@ void UpdateStateBehaviour() {
     case 6:
       audio.PlaySound(1, random(1, 9));
       break;
+    case 7:
+      for(int i = 0; i < 5; i++) {
+        leds.SetCenterLEDBrightness(255);
+        delay(500);
+        leds.SetCenterLEDBrightness(0);
+        delay(500);
+      }
+      break;
     }
     diagnoseAction = -1;
   }
