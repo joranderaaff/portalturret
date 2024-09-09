@@ -10,6 +10,7 @@ class Settings {
 public:
   String wifiSSID;
   String wifiPassword;
+  String language;
   uint8_t audioVolume = 10;
   int startInManualMode = 0;
   int openDuration = 1000;
@@ -53,6 +54,8 @@ public:
       wifiSSID = doc["wifiSSID"].as<String>();
     if (doc.containsKey("wifiPassword"))
       wifiPassword = doc["wifiPassword"].as<String>();
+    if (doc.containsKey("language"))
+      language = doc["language"].as<String>();
     if (doc.containsKey("audioVolume"))
       audioVolume = doc["audioVolume"].as<int>();
     if (doc.containsKey("centerAngle"))
@@ -95,6 +98,7 @@ public:
     StaticJsonDocument<256> doc;
     doc["wifiSSID"] = wifiSSID;
     doc["wifiPassword"] = wifiPassword;
+    doc["language"] = language;
     doc["audioVolume"] = audioVolume;
     doc["centerAngle"] = centerAngle;
     doc["idleAngle"] = idleAngle;
@@ -122,6 +126,7 @@ public:
 
   String SettingsToJSON() {
     String json = "{";
+    json += "\"language\":" + language + ",";
     json += "\"audioVolume\":" + String(audioVolume) + ",";
     json += "\"centerAngle\":" + String(centerAngle) + ",";
     json += "\"idleAngle\":" + String(idleAngle) + ",";

@@ -100,6 +100,10 @@ void StartWebServer() {
           settings.wifiSSID = request->getParam("ssid", true)->value();
           settings.wifiPassword = request->getParam("pw", true)->value();
         }
+        if (request->hasParam("language", true)) {
+          settings.language =
+              request->getParam("language", true)->value();
+        }
         if (request->hasParam("audioVolume", true)) {
           settings.audioVolume =
               request->getParam("audioVolume", true)->value().toInt() & 0xFF;
