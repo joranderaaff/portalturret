@@ -24,6 +24,8 @@
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 DNSServer dnsServer;
+#include <WiFiUdp.h>
+WiFiUDP udp;
 
 bool useCaptive = false;
 const byte DNS_PORT = 53;
@@ -74,6 +76,9 @@ void UpdateServer() {
 void StartWebServer() {
 
   Serial.println("Start webserver");
+  udp.beginPacket(IPAddress(255,255,255,255), 1337);
+  udp.print("portalturret::discovery");
+  udp.endPacket();
 
   // server.serveStatic("/", LittleFS, "/");
   //  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
