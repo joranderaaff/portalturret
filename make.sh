@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Clone the repository
 clone_repo() {
@@ -61,14 +62,32 @@ audio() {
     fi
 }
 
+download_mklittlefs() {
+    if [ ! -e mkfsimg.py ]; then
+        curl https://raw.githubusercontent.com/jrast/littlefs-python/0.4.0/examples/mkfsimg.py | sed 's#relpath = os.path.relpath(path, start=source_dir)#relpath = "/" + os.path.relpath(path, start=source_dir).replace("\\\\", "/")#' > mkfsimg.py
+    fi
+}
+
 # Download littlefs partition
 fs_get() {
     rm -rf fs
-    pip install littlefs-python
+    pip install littlefs-python==0.12.0
     OFFSET=`cat partitions.csv  | grep spiffs | awk -F, '{print $4}'`
     SIZE=`cat partitions.csv | grep spiffs | awk -F, '{print $5}'`
     esptool.py read_flash $OFFSET $SIZE fs.bin
     littlefs-python extract fs.bin fs --block-size=4096
+    rm fs.bin
+}
+
+# Upload littlefs partition
+fs_put() {
+    pip install littlefs-python==0.4.0
+    OFFSET=`cat partitions.csv  | grep spiffs | awk -F, '{print $4}'`
+    OFFSET=`printf "%d" $OFFSET`
+    SIZE=`cat partitions.csv | grep spiffs | awk -F, '{print $5}'`
+    SIZE=`printf "%d" $SIZE`
+    python mkfsimg.py --img-filename fs.bin --img-size $SIZE --block-size 4096 fs
+    esptool.py write_flash $OFFSET fs.bin
     rm fs.bin
 }
 
@@ -84,6 +103,10 @@ main() {
             ;;
         fs_get)
             fs_get
+            ;;
+        fs_put)
+            download_mklittlefs
+            fs_put
             ;;
         *)
             build_project
