@@ -130,8 +130,8 @@ public:
 
   String SettingsToJSON() {
     String json = "{";
-    json += "\"language\":" + language + ",";
-    json += "\"audioUrl\":" + audioUrl + ",";
+    json += "\"language\":\"" + language + "\",";
+    json += "\"audioUrl\":\"" + audioUrl + "\",";
     json += "\"audioVolume\":" + String(audioVolume) + ",";
     json += "\"centerAngle\":" + String(centerAngle) + ",";
     json += "\"idleAngle\":" + String(idleAngle) + ",";
