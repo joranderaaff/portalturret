@@ -34,7 +34,7 @@ public:
   }
 
   bool WingsAreOpen() {
-    return digitalRead(WING_SWITCH) == HIGH;
+    return digitalRead(WING_SWITCH) == settings.switchMode;
   }
 
   void UpdateSensors() {

@@ -117,6 +117,10 @@ void StartWebServer() {
           settings.audioVolume =
               request->getParam("audioVolume", true)->value().toInt() & 0xFF;
         }
+        if (request->hasParam("switchMode", true)) {
+          settings.switchMode =
+              request->getParam("switchMode", true)->value().toInt();
+        }
         if (request->hasParam("startInManualMode", true)) {
           settings.startInManualMode =
               request->getParam("startInManualMode", true)->value().toInt();
