@@ -33,6 +33,10 @@ Audio audio(settings, softwareSerial);
 #include "ESP32Audio.h"
 Audio audio(settings);
 
+#elif USE_SERIAL_MP3
+#include "Audio_TD5580A.h"
+Audio audio(settings, AUDIO_RX, AUDIO_TX);
+
 #elif USE_AUDIO
 #include "Audio.h"
 Audio audio(settings, softwareSerial);
