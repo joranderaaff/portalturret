@@ -15,7 +15,7 @@ public:
   }
 
   void Begin() {
-    pinMode(BUSY, INPUT);
+    pinMode(AUDIO_BUSY, INPUT);
 
     softwareSerial.begin(9600);
     myDFPlayer.begin(softwareSerial);
