@@ -33,9 +33,13 @@ Audio audio(settings, softwareSerial);
 #include "ESP32Audio.h"
 Audio audio(settings);
 
-#else
+#elif USE_AUDIO
 #include "Audio.h"
 Audio audio(settings, softwareSerial);
+
+#else
+#include "Audio_dummy.h"
+Audio audio(settings);
 #endif
 
 Sensors sensors(settings);
