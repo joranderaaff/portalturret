@@ -35,6 +35,7 @@ public:
     return analogRead(AUDIO_BUSY) < 0XFF;
 #else
     return digitalRead(AUDIO_BUSY) == LOW;
+#endif
   }
 
 private:
