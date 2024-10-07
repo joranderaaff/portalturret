@@ -3,32 +3,31 @@
 
 #include <Arduino.h>
 #include "Settings.h"
-#include <SoftwareSerial.h>
-#include <DFRobotDFPlayerMini.h>
+#include <SerialMP3.h>
 
 #include "Pins.h"
 
 class Audio {
 public:
-  Audio(Settings &settings, SoftwareSerial &softwareSerial)
-    : settings(settings), softwareSerial(softwareSerial) {
-  }
+  Audio(Settings &settings, uint8_t rx, uint8_t tx)
+    : settings(settings), mp3(rx, tx)
+    {
+    }
 
   void Begin() {
     pinMode(AUDIO_BUSY, INPUT);
 
-    softwareSerial.begin(9600);
-    myDFPlayer.begin(softwareSerial);
+    mp3.init(); 
     delay(100);
-    myDFPlayer.volume(settings.audioVolume);
+    mp3.setVolume(settings.audioVolume);
   }
 
   void PlaySound(uint8_t folder, uint8_t file) {
-    myDFPlayer.playFolder(folder, file);
+    mp3.playFolderFile(folder, file);
   }
 
   void Stop() {
-    myDFPlayer.stop();
+    mp3.stop();
   }
 
   bool IsPlayingAudio() {
@@ -41,8 +40,7 @@ public:
 
 private:
   Settings &settings;
-  SoftwareSerial &softwareSerial;
-  DFRobotDFPlayerMini myDFPlayer;
+  SerialMP3 mp3;
 };
 
 #endif

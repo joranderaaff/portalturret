@@ -18,30 +18,37 @@ SoftwareSerial softwareSerial(AUDIO_RX, AUDIO_TX);
 // Why do I have to include this here? Servo.h otherwise found twice?
 #include <ESPAsyncWebServer.h>
 
-#ifdef USE_AUDIO_CARL
-#include "Audio_carl.h"
-#else
-#ifdef HARDWARE_V3
-#include "ESP32Audio.h"
-#else
-#include "Audio.h"
-#endif
-#endif
 #include "LEDs.h"
 #include "Sensors.h"
 #include "Servos.h"
 #include "Settings.h"
 
 Settings settings;
+
+#ifdef USE_AUDIO_CARL
+#include "Audio_carl.h"
+Audio audio(settings, softwareSerial);
+
+#elif HARDWARE_V3
+#include "ESP32Audio.h"
+Audio audio(settings);
+
+#elif USE_SERIAL_MP3
+#include "Audio_TD5580A.h"
+Audio audio(settings, AUDIO_RX, AUDIO_TX);
+
+#elif USE_AUDIO
+#include "Audio.h"
+Audio audio(settings, softwareSerial);
+
+#else
+#include "Audio_dummy.h"
+Audio audio(settings);
+#endif
+
 Sensors sensors(settings);
 Servos servos(settings, sensors);
 LEDs leds;
-
-#ifdef HARDWARE_V3
-Audio audio(settings);
-#else
-Audio audio(settings, softwareSerial);
-#endif
 
 #include "Routines.h"
 #include "StateBehaviour.h"
