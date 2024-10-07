@@ -21,6 +21,7 @@ public:
   }
 
   void Begin() {
+    Serial.println("Starting up: sensors");
     pinMode(WING_SWITCH, INPUT_PULLUP);
 #ifndef LEGACY
     pinMode(PID, INPUT);
@@ -29,7 +30,9 @@ public:
     Wire.setPins(SDA, SCL);
 #endif
     accel = Adafruit_ADXL345_Unified();
-    accel.begin();
+    if (!accel.begin()) {
+        Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");
+    }
     wasOpen = WingsAreOpen();
   }
 
