@@ -13,6 +13,7 @@ public:
   String language = "english";
   String audioUrl = "https://joranderaaff.nl/portal-sentry/audio/";
   uint8_t audioVolume = 10;
+  int switchMode = HIGH;
   int startInManualMode = 0;
   int openDuration = 1000;
   int maxRotation = 50;
@@ -59,6 +60,8 @@ public:
       language = doc["language"].as<String>();
     if (doc.containsKey("audioUrl"))
       audioUrl = doc["audioUrl"].as<String>();
+    if (doc.containsKey("switchMode"))
+        switchMode = doc["switchMode"].as<int>();
     if (doc.containsKey("audioVolume"))
       audioVolume = doc["audioVolume"].as<int>();
     if (doc.containsKey("centerAngle"))
@@ -103,6 +106,7 @@ public:
     doc["wifiPassword"] = wifiPassword;
     doc["language"] = language;
     doc["audioUrl"] = audioUrl;
+    doc["switchMode"] = switchMode;
     doc["audioVolume"] = audioVolume;
     doc["centerAngle"] = centerAngle;
     doc["idleAngle"] = idleAngle;
@@ -133,6 +137,7 @@ public:
     json += "\"language\":" + language + ",";
     json += "\"audioUrl\":" + audioUrl + ",";
     json += "\"audioVolume\":" + String(audioVolume) + ",";
+    json += "\"switchMode\":" + String(switchMode) + ",";
     json += "\"centerAngle\":" + String(centerAngle) + ",";
     json += "\"idleAngle\":" + String(idleAngle) + ",";
     json += "\"wingRotateDirection\":" + String(wingRotateDirection) + ",";
