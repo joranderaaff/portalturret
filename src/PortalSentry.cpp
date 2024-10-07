@@ -80,6 +80,8 @@ void setup() {
   servos.Begin();
   servos.CloseWings();
 #if defined(USE_AUDIO) && not defined(LEGACY) && not defined(HARDWARE_V3)
+  Serial.println("Ending serial communications, enabling audio");
+  delay(300);
   Serial.end();
 #endif
   audio.Begin();
