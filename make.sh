@@ -37,28 +37,29 @@ audio() {
     PORTAL2_DIR="c:/Program Files (x86)/Steam/steamapps/common/Portal 2"
     cd audio
     if [ ! -e ffmpeg ]; then
-      curl -L https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip -o ffmpeg.zip
-      unzip ffmpeg.zip
-      mv ffmpeg-* ffmpeg
-      rm ffmpeg.zip
+        curl -L https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip -o ffmpeg.zip
+        unzip ffmpeg.zip
+        mv ffmpeg-* ffmpeg
+        rm ffmpeg.zip
     fi
     rm -rf out
     mkdir -p out
-    export PATH=$PATH:`pwd`/ffmpeg/bin
+    # shellcheck disable=SC2155
+    export PATH="$PATH:$(pwd)/ffmpeg/bin"
     if [ "$1" = "all" ]; then
-      python extract.py "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
-      mv out english
-      for i in german french spanish russian; do
-        mkdir out
-        echo will extract $i language
-        read
-        python extract.py "${PORTAL2_DIR}/portal2_$i/pak01_dir.vpk" "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
-        mv out $i
-      done
-    elif [ "$1" == "" -o "$1" == "english" ]; then
-      python extract.py "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
+        python extract.py "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
+        mv out english
+        for i in german french spanish russian; do
+            mkdir out
+            echo will extract $i language
+            read -r
+            python extract.py "${PORTAL2_DIR}/portal2_$i/pak01_dir.vpk" "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
+            mv out $i
+        done
+    elif [ "$1" == "" ] || [ "$1" == "english" ]; then
+        python extract.py "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
     else
-      python extract.py "${PORTAL2_DIR}/portal2_$1/pak01_dir.vpk" "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
+        python extract.py "${PORTAL2_DIR}/portal2_$1/pak01_dir.vpk" "${PORTAL2_DIR}/portal2/pak01_dir.vpk"
     fi
 }
 
@@ -72,9 +73,9 @@ download_mklittlefs() {
 fs_get() {
     rm -rf fs
     pip install littlefs-python==0.12.0
-    OFFSET=`cat partitions.csv  | grep spiffs | awk -F, '{print $4}'`
-    SIZE=`cat partitions.csv | grep spiffs | awk -F, '{print $5}'`
-    esptool.py read_flash $OFFSET $SIZE fs.bin
+    OFFSET=$(grep spiffs partitions.csv | awk -F, '{print $4}')
+    SIZE=$(grep spiffs partitions.csv | awk -F, '{print $5}')
+    esptool.py read_flash "$OFFSET" "$SIZE" fs.bin
     littlefs-python extract fs.bin fs --block-size=4096
     rm fs.bin
 }
@@ -82,12 +83,12 @@ fs_get() {
 # Upload littlefs partition
 fs_put() {
     pip install littlefs-python==0.4.0
-    OFFSET=`cat partitions.csv  | grep spiffs | awk -F, '{print $4}'`
-    OFFSET=`printf "%d" $OFFSET`
-    SIZE=`cat partitions.csv | grep spiffs | awk -F, '{print $5}'`
-    SIZE=`printf "%d" $SIZE`
-    python mkfsimg.py --img-filename fs.bin --img-size $SIZE --block-size 4096 fs
-    esptool.py write_flash $OFFSET fs.bin
+    OFFSET=$(grep spiffs partitions.csv | awk -F, '{print $4}')
+    OFFSET=$(printf "%d" "$OFFSET")
+    SIZE=$(grep spiffs partitions.csv | awk -F, '{print $5}')
+    SIZE=$(printf "%d" "$SIZE")
+    python mkfsimg.py --img-filename fs.bin --img-size "$SIZE" --block-size 4096 fs
+    esptool.py write_flash "$OFFSET" fs.bin
     rm fs.bin
 }
 
@@ -99,7 +100,7 @@ main() {
             ;;
         audio)
             shift
-            audio $*
+            audio "$*"
             ;;
         fs_get)
             fs_get
