@@ -2,11 +2,10 @@
 #define PT_AUDIO
 
 #include <Arduino.h>
-#include "Settings.h"
-#include <SoftwareSerial.h>
 #include <DFRobotDFPlayerMini.h>
-
+#include <SoftwareSerial.h>
 #include "Pins.h"
+#include "Settings.h"
 
 class Audio {
 public:
