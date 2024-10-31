@@ -8,6 +8,7 @@
 #include <AsyncTCP.h>
 #include <ESPmDNS.h>
 #include <WiFi.h>
+#include "ESP32Downloader.h"
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
@@ -15,11 +16,8 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
-
 #include "../generated/index.html.gz.h"
 #include "../generated/audio.h"
-#include "ESP32Downloader.h"
-#include "config.h"
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);

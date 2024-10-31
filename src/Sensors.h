@@ -2,10 +2,10 @@
 #define PT_SENSORS
 
 #include <Arduino.h>
-#include "Settings.h"
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>
-#include "pins.h"
+#include "Pins.h"
+#include "Settings.h"
 
 #define MEASUREMENTS 10
 
