@@ -44,6 +44,9 @@ void setState(TurretState nextState) {
 
   if (currentTurretMode == TurretMode::Automatic) {
     switch (nextState) {
+    case TurretState::Idle:
+      // Handle Idle state if necessary
+      break;
     case TurretState::Activated:
       activatedRoutine.reset();
       break;
@@ -80,6 +83,9 @@ void setManualState(ManualState nextState) {
 
   if (currentTurretMode == TurretMode::Manual) {
     switch (nextState) {
+    case ManualState::Idle:
+      // Handle Idle state if necessary
+      break;
     case ManualState::Opening:
       openWingsRoutine.reset();
       break;
@@ -162,7 +168,14 @@ void UpdateStateBehaviour() {
           currentState != TurretState::Rebooting) {
         setState(TurretState::PickedUp);
       }
+
       switch (currentState) {
+      case TurretState::ManualEngaging:
+        manualEngagingRoutine.runCoroutine();
+        if (manualEngagingRoutine.isDone()) {
+          setState(TurretState::Idle);
+        }
+        break;
       case TurretState::Idle:
         if (motionDetected) {
           setState(TurretState::Activated);
@@ -226,6 +239,7 @@ void UpdateStateBehaviour() {
       }
     }
   } else if(currentTurretMode == TurretMode::Manual) {
+    Serial.println(diagnoseMode);
     switch (diagnoseAction) {
     case 0:
       servos.SetWingAngle(settings.idleAngle -

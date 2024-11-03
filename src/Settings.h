@@ -99,6 +99,7 @@ public:
 
     // Create a JSON document to store the settings
     StaticJsonDocument<256> doc;
+    
     doc["wifiSSID"] = wifiSSID;
     doc["wifiPassword"] = wifiPassword;
     doc["language"] = language;

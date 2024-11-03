@@ -2,8 +2,9 @@
 #define PT_AUDIO
 
 #include <Arduino.h>
-#include <SerialMP3.h>
 #include "Settings.h"
+#include <SerialMP3.h>
+
 #include "Pins.h"
 
 class Audio {

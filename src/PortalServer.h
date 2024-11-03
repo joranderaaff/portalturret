@@ -8,7 +8,6 @@
 #include <AsyncTCP.h>
 #include <ESPmDNS.h>
 #include <WiFi.h>
-#include "ESP32Downloader.h"
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266httpUpdate.h>
@@ -16,8 +15,11 @@
 #endif
 #include <ESPAsyncWebServer.h>
 #include <WebSocketsServer.h>
+
 #include "../generated/index.html.gz.h"
 #include "../generated/audio.h"
+#include "ESP32Downloader.h"
+#include "config.h"
 
 AsyncWebServer server = AsyncWebServer(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
@@ -29,10 +31,10 @@ bool useCaptive = false;
 const byte DNS_PORT = 53;
 bool websocketStarted;
 unsigned long nextWebSocketUpdateTime = 0;
+uint8_t transferType;
 
 void RequestReboot() {
   while (true) {
-    int i = 0;
   }
 }
 
@@ -54,18 +56,18 @@ void UpdateServer() {
     int16_t z = sensors.smoothZ / MEASUREMENTS;
 
     uint8_t values[] = {
-        (x >> 8),
-        (x & 0xFF),
-        (y >> 8),
-        (y & 0xFF),
-        (z >> 8),
-        (z & 0xFF),
-        (!sensors.WingsAreOpen() ? 1 : 0),
-        (sensors.IsDetectingMotion() ? 1 : 0),
-        ((uint8_t)(a >> 8)) & 0xFF,
-        ((uint8_t)a) & 0xFF,
+        static_cast<uint8_t>(x >> 8),
+        static_cast<uint8_t>(x & 0xFF),
+        static_cast<uint8_t>(y >> 8),
+        static_cast<uint8_t>(y & 0xFF),
+        static_cast<uint8_t>(z >> 8),
+        static_cast<uint8_t>(z & 0xFF),
+        static_cast<uint8_t>(!sensors.WingsAreOpen() ? 1 : 0),
+        static_cast<uint8_t>(sensors.IsDetectingMotion() ? 1 : 0),
+        static_cast<uint8_t>((a >> 8) & 0xFF),
+        static_cast<uint8_t>(a & 0xFF),
         (uint8_t)currentState,
-        (audio.IsPlayingAudio() ? 1 : 0),
+        static_cast<uint8_t>(audio.IsPlayingAudio() ? 1 : 0),
     };
     webSocket.broadcastBIN(values, 12);
   }
@@ -290,12 +292,14 @@ void StartWebServer() {
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t lenght) {
-  uint8_t transferType;
 
   // When a WebSocket message is received
   switch (type) {
   case WStype_ERROR:
     // Serial.printf("Error: [%f]", payload);
+    break;
+  case WStype_TEXT:
+    // Handle text message if needed
     break;
   case WStype_BIN:
     switch (payload[0]) {
@@ -316,10 +320,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
     break;
   case WStype_DISCONNECTED: // if the websocket is disconnected
     break;
+  
+  case WStype_FRAGMENT_TEXT_START:
+    transferType = payload[0];
+    break;
+  
+  case WStype_FRAGMENT_BIN_START:
+    transferType = payload[0];
+    break;
+
   case WStype_CONNECTED: // if a new websocket connection is established
-    IPAddress ip = webSocket.remoteIP(num);
+    // IPAddress ip = webSocket.remoteIP(num);
     // Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
     // ip[1], ip[2], ip[3], payload);
+    break;
+  
+  default:
     break;
   }
 }
@@ -407,7 +423,6 @@ void StartServer() {
       LittleFS.format();
     }
   }
-
 
   AsyncElegantOTA.begin(&server);
   ArduinoOTA.onStart([]() {

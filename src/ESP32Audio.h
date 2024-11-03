@@ -2,13 +2,14 @@
 #define PT_AUDIO
 
 #include <Arduino.h>
+#include "Settings.h"
+#include "Pins.h"
+#include <WiFi.h>
+#include <LittleFS.h>
 #include <AudioFileSourceLittleFS.h>
 #include <AudioGeneratorMP3.h>
 #include <AudioOutputI2S.h>
-#include <LittleFS.h>
-#include <WiFi.h>
-#include "Settings.h"
-#include "Pins.h"
+#include "pins.h"
 
 class Audio {
 public:

@@ -2,10 +2,11 @@
 #define PT_AUDIO
 
 #include <Arduino.h>
-#include <DFRobotDFPlayerMini.h>
-#include <SoftwareSerial.h>
-#include "Pins.h"
 #include "Settings.h"
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+#include "Pins.h"
 
 class Audio {
 public:
@@ -31,11 +32,12 @@ public:
   }
 
   bool IsPlayingAudio() {
-#ifdef LEGACY
-    return analogRead(AUDIO_BUSY) < 0XFF;
-#else
-    return digitalRead(AUDIO_BUSY) == LOW;
-#endif
+    #ifdef LEGACY
+        return analogRead(AUDIO_BUSY) < 0XFF;
+        Serial.println(analogRead(AUDIO_BUSY));
+    #else
+        return digitalRead(AUDIO_BUSY) == LOW;
+    #endif
   }
 
 private:
