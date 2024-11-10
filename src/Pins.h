@@ -33,8 +33,8 @@
         #define WING_SWITCH D0
         #define PID D7
         #define CENTER_LED 0
-        #define GUN_RIGHT 13
-        #define GUN_LEFT 12
+        #define GUN_RIGHT 14
+        #define GUN_LEFT 15
         #define SERVO_WING 7
         #define SERVO_ROTATE 8
         #define AUDIO_RX D5

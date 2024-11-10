@@ -2,7 +2,7 @@
 #define PT_LEDS
 
 #include <FastLED.h>
-#include "Pins.h"
+#include "pins.h"
 
 #define NUM_LEDS 8
 

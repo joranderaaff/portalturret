@@ -1,7 +1,9 @@
 #ifdef HARDWARE_V3
+#include <WiFi.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
-#include <WiFi.h>
+#include "config.h"
+
 #include <WiFiClient.h>
 WiFiClient* wifiClient;
 

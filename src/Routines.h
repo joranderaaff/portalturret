@@ -1,13 +1,20 @@
 #ifndef PT_ROUTINES
 #define PT_ROUTINES
 
-#include <AceRoutine.h>
 #include <Arduino.h>
 #include "LEDs.h"
 #include "Servos.h"
 #include "Settings.h"
+#include <AceRoutine.h>
 
 using namespace ace_routine;
+
+
+static unsigned long fromTime = 0;
+static unsigned long toTime = 0;
+static int fromAngle = 0;
+static int toAngle = 0;
+
 
 static bool fullyOpened;
 
@@ -46,11 +53,6 @@ COROUTINE(activatedRoutine) {
     COROUTINE_AWAIT(!audio.IsPlayingAudio());
   }
 #endif
-
-  static unsigned long fromTime;
-  static unsigned long toTime;
-  static int fromAngle;
-  static int toAngle;
   static bool closedAtStart;
   closedAtStart = !sensors.WingsAreOpen();
 
@@ -109,19 +111,18 @@ COROUTINE(searchingRoutine) {
 
 COROUTINE(engagingRoutine) {
   COROUTINE_BEGIN();
-
-  static unsigned long fromTime;
-  static unsigned long toTime;
-  static int fromAngle;
-  static int toAngle;
+  Serial.println("Zustand 1: Start"); 
+  
 
   fromTime = millis();
+
 #ifdef USE_AUDIO
   if (audio.IsPlayingAudio()) {
     audio.Stop();
     COROUTINE_AWAIT(!audio.IsPlayingAudio());
+    audio.PlaySound(9, 13);
   }
-  audio.PlaySound(9, 13);
+
 #endif
   leds.alarm = true;
   fromTime = millis();
@@ -131,9 +132,12 @@ COROUTINE(engagingRoutine) {
   COROUTINE_AWAIT(!audio.IsPlayingAudio());
   audio.PlaySound(9, 8);
 #endif
+  Serial.println("audio played");
   leds.alarm = false;
   fromTime = millis();
   toTime = fromTime + 1200;
+
+  Serial.println("Fully opened: " + String(fullyOpened));
 
   if (fullyOpened) {
     int whatSide = random(0, 2);
@@ -196,8 +200,6 @@ COROUTINE(pickedUpRoutine) {
   }
 #endif
 
-  static unsigned long nextAudioClipTime = 0;
-
   while (true) {
     if (fullyOpened) {
       float t = millis() / 1000.0 * 5.0;
@@ -208,10 +210,12 @@ COROUTINE(pickedUpRoutine) {
                                 settings.centerAngle + settings.maxRotation));
     }
 #ifdef USE_AUDIO
-    if (millis() > nextAudioClipTime) {
-      nextAudioClipTime = millis() + 2500;
-      audio.PlaySound(5, random(1, 11));
-    }
+  static unsigned long nextAudioClipTime = 0;
+
+  if (millis() > nextAudioClipTime) {
+    nextAudioClipTime = millis() + 2500;
+    audio.PlaySound(5, random(1, 11));
+  }
 #endif
     COROUTINE_YIELD();
   }
@@ -222,8 +226,6 @@ COROUTINE(pickedUpRoutine) {
 COROUTINE(shutdownRoutine) {
   COROUTINE_BEGIN();
 
-  static unsigned long fromTime;
-  static unsigned long toTime;
   static unsigned long t;
   static unsigned long closingStartTime;
 #ifdef USE_AUDIO
@@ -271,9 +273,6 @@ COROUTINE(shutdownRoutine) {
 
 COROUTINE(rebootRoutine) {
   COROUTINE_BEGIN();
-
-  static unsigned long fromTime;
-  static unsigned long toTime;
   ;
   static unsigned long t;
 
@@ -306,10 +305,7 @@ COROUTINE(manualEngagingRoutine) {
       COROUTINE_AWAIT(!audio.IsPlayingAudio());
     }
 #endif
-    static unsigned long fromTime;
-    static unsigned long toTime;
-    static int fromAngle;
-    static int toAngle;
+
 #ifdef USE_AUDIO
     audio.PlaySound(9, 8);
 #endif

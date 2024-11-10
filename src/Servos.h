@@ -2,14 +2,14 @@
 #define PT_SERVOS
 
 #include <Arduino.h>
+#include "Sensors.h"
+#include "Settings.h"
 #ifdef ESP32
 #include "ESP32Servo.h"
 #else
 #include <Servo.h>
 #endif
-#include "Pins.h"
-#include "Sensors.h"
-#include "Settings.h"
+#include "pins.h"
 
 // Tweak these according to servo speed
 #define CLOSE_STOP_DELAY 100

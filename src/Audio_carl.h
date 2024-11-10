@@ -2,12 +2,13 @@
 #define PT_AUDIO
 
 #include <Arduino.h>
+#include "Settings.h"
 #include <SoftwareSerial.h>
 #include "log.h"
 #include "mp3_driver.h"
 #include "mp3_driver_factory.h"
+
 #include "Pins.h"
-#include "Settings.h"
 
 class Audio {
 public:

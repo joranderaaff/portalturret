@@ -1,6 +1,6 @@
 // General
 #include <Arduino.h>
-#include "Pins.h"
+#include "pins.h"
 
 #ifdef LEGACY
 #include <Adafruit_PWMServoDriver.h>
@@ -22,6 +22,8 @@ SoftwareSerial softwareSerial(AUDIO_RX, AUDIO_TX);
 #include "Sensors.h"
 #include "Servos.h"
 #include "Settings.h"
+
+
 
 Settings settings;
 
