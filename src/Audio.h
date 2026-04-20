@@ -33,7 +33,7 @@ public:
 
   bool IsPlayingAudio() {
     #ifdef LEGACY
-        return analogRead(AUDIO_BUSY) < 0XFF;
+        return analogRead(AUDIO_BUSY) < 0xFF;
     #else
         return digitalRead(AUDIO_BUSY) == LOW;
     #endif
