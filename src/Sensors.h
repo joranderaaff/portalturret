@@ -11,13 +11,21 @@
 
 class Sensors {
 public:
-  int32_t smoothX;
-  int32_t smoothY;
-  int32_t smoothZ;
-  bool accelerometerBuffered;
+  int32_t smoothX = 0;
+  int32_t smoothY = 0;
+  int32_t smoothZ = 0;
+  bool accelerometerBuffered = false;
 
   Sensors(Settings &settingsIn)
-    : settings(settingsIn) {
+    : settings(settingsIn),
+      currentMeasurement(0),
+      wingsOpen(false),
+      wasOpen(false),
+      isDetectingMotion(false),
+      lastMotionCheckMillis(0) {
+    memset(accelX, 0, sizeof(accelX));
+    memset(accelY, 0, sizeof(accelY));
+    memset(accelZ, 0, sizeof(accelZ));
   }
 
   void Begin() {
