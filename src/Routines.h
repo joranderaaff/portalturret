@@ -32,7 +32,7 @@ COROUTINE(openWingsRoutine) {
 
 COROUTINE(closeWingsRoutine) {
   COROUTINE_BEGIN();
-  static unsigned long startTime;
+  static unsigned long startTime = 0;
   servos.SetRotateAngle(settings.centerAngle);
   COROUTINE_DELAY(250);
   fullyOpened = false;
@@ -53,7 +53,7 @@ COROUTINE(activatedRoutine) {
     COROUTINE_AWAIT(!audio.IsPlayingAudio());
   }
 #endif
-  static bool closedAtStart;
+  static bool closedAtStart = false;
   closedAtStart = !sensors.WingsAreOpen();
 
 #ifdef USE_AUDIO
@@ -226,8 +226,8 @@ COROUTINE(pickedUpRoutine) {
 COROUTINE(shutdownRoutine) {
   COROUTINE_BEGIN();
 
-  static unsigned long t;
-  static unsigned long closingStartTime;
+  static unsigned long t = 0;
+  static unsigned long closingStartTime = 0;
 #ifdef USE_AUDIO
   if (audio.IsPlayingAudio()) {
     audio.Stop();
@@ -274,7 +274,7 @@ COROUTINE(shutdownRoutine) {
 COROUTINE(rebootRoutine) {
   COROUTINE_BEGIN();
   ;
-  static unsigned long t;
+  static unsigned long t = 0;
 
   COROUTINE_DELAY(1000);
 
