@@ -45,6 +45,20 @@ public:
     return mp3 && mp3->isRunning();
   }
 
+  ~Audio() {
+    if (mp3) {
+      if (mp3->isRunning())
+        mp3->stop();
+      delete mp3;
+      mp3 = nullptr;
+    }
+    cleanupFile();
+    if (out) {
+      delete out;
+      out = nullptr;
+    }
+  }
+
   void Loop() {
     if (mp3 && mp3->isRunning()) {
       if (!mp3->loop()) {
