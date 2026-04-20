@@ -34,7 +34,6 @@ public:
   bool IsPlayingAudio() {
     #ifdef LEGACY
         return analogRead(AUDIO_BUSY) < 0XFF;
-        Serial.println(analogRead(AUDIO_BUSY));
     #else
         return digitalRead(AUDIO_BUSY) == LOW;
     #endif
