@@ -43,7 +43,7 @@ public:
     }
 
     // Create a JSON document to read the settings
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     DeserializationError error = deserializeJson(doc, file);
     if (error) {
       Serial.println("Failed to parse settings file");
@@ -98,7 +98,7 @@ public:
     }
 
     // Create a JSON document to store the settings
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     
     doc["wifiSSID"] = wifiSSID;
     doc["wifiPassword"] = wifiPassword;
