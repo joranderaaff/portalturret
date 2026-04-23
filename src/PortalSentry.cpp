@@ -1,6 +1,6 @@
 // General
 #include <Arduino.h>
-#include "pins.h"
+#include "Pins.h"
 
 #ifdef LEGACY
 #include <Adafruit_PWMServoDriver.h>

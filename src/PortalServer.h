@@ -21,8 +21,8 @@
 #include "ESP32Downloader.h"
 #include "config.h"
 
-AsyncWebServer server = AsyncWebServer(80);
-WebSocketsServer webSocket = WebSocketsServer(81);
+AsyncWebServer server(80);
+WebSocketsServer webSocket(81);
 DNSServer dnsServer;
 #include <WiFiUdp.h>
 WiFiUDP udp;
@@ -34,8 +34,8 @@ unsigned long nextWebSocketUpdateTime = 0;
 uint8_t transferType;
 
 void RequestReboot() {
-  while (true) {
-  }
+  delay(100);
+  ESP.restart();
 }
 
 void UpdateServer() {
@@ -205,7 +205,7 @@ void StartWebServer() {
 
   server.on("/set_mode", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("mode", true)) {
-      AsyncWebParameter *modeParam = request->getParam("mode", true);
+      const AsyncWebParameter *modeParam = request->getParam("mode", true);
       currentTurretMode = (TurretMode)modeParam->value().toInt();
       // currentRotateAngle = 90;
       request->send(200, "text/html",
@@ -218,7 +218,7 @@ void StartWebServer() {
 
   server.on("/set_state", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("state", true)) {
-      AsyncWebParameter *stateParam = request->getParam("state", true);
+      const AsyncWebParameter *stateParam = request->getParam("state", true);
       int state = stateParam->value().toInt();
       setState((TurretState)state);
       request->send(200, "text/html", "State set");
@@ -229,7 +229,7 @@ void StartWebServer() {
 
   server.on("/diagnose", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("action", true)) {
-      AsyncWebParameter *stateParam = request->getParam("action", true);
+      const AsyncWebParameter *stateParam = request->getParam("action", true);
       diagnoseMode = true;
       diagnoseAction = stateParam->value().toInt();
       request->send(200, "text/html", "Diagnose");
@@ -241,7 +241,7 @@ void StartWebServer() {
   server.on("/set_open", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (currentTurretMode == TurretMode::Manual) {
       if (request->hasParam("open", true)) {
-        AsyncWebParameter *openParam = request->getParam("open", true);
+        const AsyncWebParameter *openParam = request->getParam("open", true);
         if (openParam->value().toInt() == 1) {
           setManualState(ManualState::Opening);
           request->send(200, "text/html", "Opening");
@@ -259,8 +259,8 @@ void StartWebServer() {
 
   // server.on("/set_angle", HTTP_POST, [&](AsyncWebServerRequest *request) {
   //   if (request->hasParam("angle", true)) {
-  //     AsyncWebParameter *angleParam = request->getParam("angle", true);
-  //     AsyncWebParameter *servoParam = request->getParam("servo", true);
+  //     const AsyncWebParameter *angleParam = request->getParam("angle", true);
+  //     const AsyncWebParameter *servoParam = request->getParam("servo", true);
   //     int angle = angleParam->value().toInt();
   //     int servo = servoParam->value().toInt();
   //     currentMoveSpeed = angle;

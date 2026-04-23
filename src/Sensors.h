@@ -5,7 +5,7 @@
 #include "Settings.h"
 #include <Adafruit_ADXL345_U.h>
 #include <Adafruit_Sensor.h>
-#include "pins.h"
+#include "Pins.h"
 
 #define MEASUREMENTS 10
 

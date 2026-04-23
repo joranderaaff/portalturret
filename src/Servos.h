@@ -9,7 +9,7 @@
 #else
 #include <Servo.h>
 #endif
-#include "pins.h"
+#include "Pins.h"
 
 // Tweak these according to servo speed
 #define CLOSE_STOP_DELAY 100

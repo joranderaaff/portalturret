@@ -239,7 +239,6 @@ void UpdateStateBehaviour() {
       }
     }
   } else if(currentTurretMode == TurretMode::Manual) {
-    Serial.println(diagnoseMode);
     switch (diagnoseAction) {
     case 0:
       servos.SetWingAngle(settings.idleAngle -
