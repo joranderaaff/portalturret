@@ -34,8 +34,8 @@ unsigned long nextWebSocketUpdateTime = 0;
 uint8_t transferType;
 
 void RequestReboot() {
-  while (true) {
-  }
+  delay(100);
+  ESP.restart();
 }
 
 void UpdateServer() {
