@@ -45,8 +45,8 @@
         #define PID A0
         #define GUN_RIGHT 13
         #define GUN_LEFT 12
-        #define SERVO_WING 12
-        #define SERVO_ROTATE 13        
+        #define SERVO_ROTATE 12        
+        #define SERVO_WING 13
         #define CENTER_LED D3
         #define GUN_LEDS D4
         #define AUDIO_RX RX
