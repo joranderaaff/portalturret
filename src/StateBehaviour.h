@@ -1,9 +1,9 @@
 #ifndef PT_STATE_BEHAVIOUR
 #define PT_STATE_BEHAVIOUR
 
-#include <Arduino.h>
 #include "Servos.h"
 #include "Settings.h"
+#include <Arduino.h>
 
 enum class TurretMode { Automatic = 0, Manual = 1, Idle = 2 };
 
@@ -35,6 +35,9 @@ unsigned long undetectTime = 0;
 unsigned long previousTime = 0;
 unsigned long stateStartTime = 0;
 unsigned long lastMovementTime = 0;
+
+long panicBuffer = 0;
+
 bool diagnoseMode;
 int diagnoseAction;
 
@@ -163,7 +166,16 @@ void UpdateStateBehaviour() {
         lastMovementTime = millis();
       }
 
-      if (pickedUp && currentState != TurretState::PickedUp &&
+      if (pickedUp) {
+        panicBuffer += deltaTime;
+      } else {
+        panicBuffer -= deltaTime;
+        if (panicBuffer < 0) {
+          panicBuffer = 0;
+        }
+      }
+
+      if (panicBuffer > 250 && currentState != TurretState::PickedUp &&
           currentState != TurretState::Shutdown &&
           currentState != TurretState::Rebooting) {
         setState(TurretState::PickedUp);
@@ -238,7 +250,7 @@ void UpdateStateBehaviour() {
         break;
       }
     }
-  } else if(currentTurretMode == TurretMode::Manual) {
+  } else if (currentTurretMode == TurretMode::Manual) {
     switch (diagnoseAction) {
     case 0:
       servos.SetWingAngle(settings.idleAngle -
@@ -274,7 +286,7 @@ void UpdateStateBehaviour() {
       audio.PlaySound(1, random(1, 9));
       break;
     case 7:
-      for(int i = 0; i < 5; i++) {
+      for (int i = 0; i < 5; i++) {
         leds.SetCenterLEDBrightness(255);
         delay(500);
         leds.SetCenterLEDBrightness(0);
