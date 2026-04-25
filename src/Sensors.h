@@ -71,6 +71,7 @@ public:
 #else
       isDetectingMotion = analogRead(PID) > 0xFF;
 #endif
+      lastMotionCheckMillis = curMillis;
     }
   }
 
