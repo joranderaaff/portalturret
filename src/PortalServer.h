@@ -396,7 +396,7 @@ void StartServer() {
     Serial.println(WiFi.localIP());
 #ifdef HARDWARE_V3
     char filename[256];
-    for (int folder = 1; folder <= sizeof(sounds_number); folder++) {
+    for (int folder = 1; folder <= sizeof(sounds_number) / sizeof(sounds_number[0]); folder++) {
       snprintf(filename, 255, "/%02i", folder);
       LittleFS.mkdir(filename);
       for (int filenum = 1; filenum <= sounds_number[folder-1]; filenum++) {
