@@ -18,3 +18,4 @@ audio/russian
 fs
 *.bin
 mkfsimg.py
+old/*

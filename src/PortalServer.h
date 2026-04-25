@@ -21,8 +21,8 @@
 #include "ESP32Downloader.h"
 #include "config.h"
 
-AsyncWebServer server = AsyncWebServer(80);
-WebSocketsServer webSocket = WebSocketsServer(81);
+AsyncWebServer server(80);
+WebSocketsServer webSocket(81);
 DNSServer dnsServer;
 #include <WiFiUdp.h>
 WiFiUDP udp;
@@ -31,11 +31,11 @@ bool useCaptive = false;
 const byte DNS_PORT = 53;
 bool websocketStarted;
 unsigned long nextWebSocketUpdateTime = 0;
+uint8_t transferType;
 
 void RequestReboot() {
-  while (true) {
-    int i = 0;
-  }
+  delay(100);
+  ESP.restart();
 }
 
 void UpdateServer() {
@@ -56,18 +56,18 @@ void UpdateServer() {
     int16_t z = sensors.smoothZ / MEASUREMENTS;
 
     uint8_t values[] = {
-        (x >> 8),
-        (x & 0xFF),
-        (y >> 8),
-        (y & 0xFF),
-        (z >> 8),
-        (z & 0xFF),
-        (!sensors.WingsAreOpen() ? 1 : 0),
-        (sensors.IsDetectingMotion() ? 1 : 0),
-        ((uint8_t)(a >> 8)) & 0xFF,
-        ((uint8_t)a) & 0xFF,
+        static_cast<uint8_t>(x >> 8),
+        static_cast<uint8_t>(x & 0xFF),
+        static_cast<uint8_t>(y >> 8),
+        static_cast<uint8_t>(y & 0xFF),
+        static_cast<uint8_t>(z >> 8),
+        static_cast<uint8_t>(z & 0xFF),
+        static_cast<uint8_t>(!sensors.WingsAreOpen() ? 1 : 0),
+        static_cast<uint8_t>(sensors.IsDetectingMotion() ? 1 : 0),
+        static_cast<uint8_t>((a >> 8) & 0xFF),
+        static_cast<uint8_t>(a & 0xFF),
         (uint8_t)currentState,
-        (audio.IsPlayingAudio() ? 1 : 0),
+        static_cast<uint8_t>(audio.IsPlayingAudio() ? 1 : 0),
     };
     webSocket.broadcastBIN(values, 12);
   }
@@ -205,7 +205,7 @@ void StartWebServer() {
 
   server.on("/set_mode", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("mode", true)) {
-      AsyncWebParameter *modeParam = request->getParam("mode", true);
+      const AsyncWebParameter *modeParam = request->getParam("mode", true);
       currentTurretMode = (TurretMode)modeParam->value().toInt();
       // currentRotateAngle = 90;
       request->send(200, "text/html",
@@ -218,7 +218,7 @@ void StartWebServer() {
 
   server.on("/set_state", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("state", true)) {
-      AsyncWebParameter *stateParam = request->getParam("state", true);
+      const AsyncWebParameter *stateParam = request->getParam("state", true);
       int state = stateParam->value().toInt();
       setState((TurretState)state);
       request->send(200, "text/html", "State set");
@@ -229,7 +229,7 @@ void StartWebServer() {
 
   server.on("/diagnose", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if (request->hasParam("action", true)) {
-      AsyncWebParameter *stateParam = request->getParam("action", true);
+      const AsyncWebParameter *stateParam = request->getParam("action", true);
       diagnoseMode = true;
       diagnoseAction = stateParam->value().toInt();
       request->send(200, "text/html", "Diagnose");
@@ -241,7 +241,7 @@ void StartWebServer() {
   server.on("/set_open", HTTP_POST, [](AsyncWebServerRequest *request) {
     if (currentTurretMode == TurretMode::Manual) {
       if (request->hasParam("open", true)) {
-        AsyncWebParameter *openParam = request->getParam("open", true);
+        const AsyncWebParameter *openParam = request->getParam("open", true);
         if (openParam->value().toInt() == 1) {
           setManualState(ManualState::Opening);
           request->send(200, "text/html", "Opening");
@@ -259,8 +259,8 @@ void StartWebServer() {
 
   // server.on("/set_angle", HTTP_POST, [&](AsyncWebServerRequest *request) {
   //   if (request->hasParam("angle", true)) {
-  //     AsyncWebParameter *angleParam = request->getParam("angle", true);
-  //     AsyncWebParameter *servoParam = request->getParam("servo", true);
+  //     const AsyncWebParameter *angleParam = request->getParam("angle", true);
+  //     const AsyncWebParameter *servoParam = request->getParam("servo", true);
   //     int angle = angleParam->value().toInt();
   //     int servo = servoParam->value().toInt();
   //     currentMoveSpeed = angle;
@@ -292,12 +292,14 @@ void StartWebServer() {
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                     size_t lenght) {
-  uint8_t transferType;
 
   // When a WebSocket message is received
   switch (type) {
   case WStype_ERROR:
     // Serial.printf("Error: [%f]", payload);
+    break;
+  case WStype_TEXT:
+    // Handle text message if needed
     break;
   case WStype_BIN:
     switch (payload[0]) {
@@ -318,10 +320,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
     break;
   case WStype_DISCONNECTED: // if the websocket is disconnected
     break;
+  
+  case WStype_FRAGMENT_TEXT_START:
+    transferType = payload[0];
+    break;
+  
+  case WStype_FRAGMENT_BIN_START:
+    transferType = payload[0];
+    break;
+
   case WStype_CONNECTED: // if a new websocket connection is established
-    IPAddress ip = webSocket.remoteIP(num);
+    // IPAddress ip = webSocket.remoteIP(num);
     // Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0],
     // ip[1], ip[2], ip[3], payload);
+    break;
+  
+  default:
     break;
   }
 }
@@ -409,7 +423,6 @@ void StartServer() {
       LittleFS.format();
     }
   }
-
 
   AsyncElegantOTA.begin(&server);
   ArduinoOTA.onStart([]() {
