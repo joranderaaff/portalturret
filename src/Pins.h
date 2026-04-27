@@ -7,7 +7,7 @@
         #define SERVO_WING 6
         #define SERVO_ROTATE 4
         #define WING_SWITCH 3
-        #define PID 11
+        #define PIR 11
         #define CENTER_LED 8
         #define GUN_LEDS 10
         #define RING_LEDS 12
@@ -19,7 +19,7 @@
         #define SERVO_WING 11
         #define SERVO_ROTATE 9
         #define WING_SWITCH 7
-        #define PID 2
+        #define PIR 2
         #define CENTER_LED 18
         #define GUN_LEDS 16
         #define RING_LEDS 12
@@ -31,7 +31,7 @@
     #ifdef LEGACY
         #define AUDIO_BUSY A0
         #define WING_SWITCH D0
-        #define PID D7
+        #define PIR D7
         #define CENTER_LED 0
         #define GUN_RIGHT 14
         #define GUN_LEFT 15
@@ -42,7 +42,7 @@
     #else
         #define AUDIO_BUSY D0
         #define WING_SWITCH D5
-        #define PID A0
+        #define PIR A0
         #define GUN_RIGHT 13
         #define GUN_LEFT 12
         #define SERVO_ROTATE 12        

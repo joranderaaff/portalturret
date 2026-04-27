@@ -30,12 +30,17 @@ public:
 
   void Begin() {
     Serial.println("Starting up: sensors");
+#ifndef HARDWARE_V3
     pinMode(WING_SWITCH, INPUT_PULLUP);
+#else
+    pinMode(WING_SWITCH, INPUT_PULLDOWN);
+#endif
 #ifndef LEGACY
-    pinMode(PID, INPUT);
+    pinMode(PIR, INPUT);
 #endif
 #ifdef SDA
     Wire.setPins(SDA, SCL);
+    Wire.begin();
 #endif
     accel = Adafruit_ADXL345_Unified();
     if (!accel.begin()) {
@@ -45,7 +50,11 @@ public:
   }
 
   bool WingsAreOpen() {
+#ifdef HARDWARE_V3
+    return digitalRead(WING_SWITCH) == LOW;
+#else
     return digitalRead(WING_SWITCH) == HIGH;
+#endif
   }
 
   void UpdateSensors() {
@@ -78,9 +87,9 @@ public:
     unsigned long curMillis = millis();
     if (curMillis > lastMotionCheckMillis + 500) {
 #ifdef LEGACY
-      isDetectingMotion = digitalRead(PID) == HIGH;
+      isDetectingMotion = digitalRead(PIR) == HIGH;
 #else
-      isDetectingMotion = analogRead(PID) > 0xFF;
+      isDetectingMotion = analogRead(PIR) > 0xFF;
 #endif
       lastMotionCheckMillis = curMillis;
     }
