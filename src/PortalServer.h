@@ -86,8 +86,13 @@ void StartWebServer() {
   //  });
 
   ArRequestHandlerFunction siteHandler = [](AsyncWebServerRequest *request) {
+#ifdef ESP32
+    AsyncWebServerResponse *response = request->beginResponse(
+        200, "text/html", index_html_gz, index_html_gz_len);
+#else
     AsyncWebServerResponse *response = request->beginResponse_P(
         200, "text/html", index_html_gz, index_html_gz_len);
+#endif
     response->addHeader("Content-Encoding", "gzip");
     request->send(response);
   };
