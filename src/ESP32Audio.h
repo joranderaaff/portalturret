@@ -13,9 +13,7 @@
 class Audio {
 public:
   Audio(Settings &settings)
-    : settings(settings) {
-    mp3 = NULL;
-  }
+    : settings(settings), mp3(nullptr), file(nullptr), out(nullptr) {}
 
   void Begin() {
     out = new AudioOutputI2S();
@@ -25,11 +23,13 @@ public:
   }
 
   void PlaySound(uint8_t folder, uint8_t filenum) {
+    cleanupFile();
     char filename[32];
     snprintf(filename, 31, "/%02i/%03i.mp3", folder, filenum);
     file = new AudioFileSourceLittleFS(filename);
     if (!mp3->begin(file, out)) {
       Serial.println("MP3 failed to start");
+      cleanupFile();
     } else {
       Serial.print("MP3 playback started ");
       Serial.println(filename);
@@ -39,6 +39,7 @@ public:
   void Stop() {
     if (mp3)
       mp3->stop();
+    cleanupFile();
   }
 
   bool IsPlayingAudio() {
@@ -50,11 +51,20 @@ public:
       if (!mp3->loop()) {
         mp3->stop();
         Serial.println("MP3 playback stopped");
-        file->close();
+        cleanupFile();
       }
     }
   }
+
 private:
+  void cleanupFile() {
+    if (file) {
+      file->close();
+      delete file;
+      file = nullptr;
+    }
+  }
+
   Settings &settings;
   AudioGeneratorMP3 *mp3;
   AudioFileSourceLittleFS *file;
