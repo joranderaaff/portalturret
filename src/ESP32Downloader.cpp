@@ -32,6 +32,7 @@ void downloadFile(const char* urlPath, const char* filePath) {
     File file = LittleFS.open(filePath, FILE_WRITE);
     if (!file) {
       Serial.println("Failed to open file for writing");
+      http.end();
       return;
     }
 
@@ -60,6 +61,10 @@ void downloadFile(const char* urlPath, const char* filePath) {
       }
       delay(1);
     }
+
+    file.close();
   }
+
+  http.end();
 }
 #endif
