@@ -5,7 +5,7 @@
 #include "config.h"
 
 #include <WiFiClient.h>
-WiFiClient* wifiClient;
+WiFiClient* wifiClient = nullptr;
 
 #define PREFIX "https://joranderaaff.nl/portal-sentry/audio/english"
 
