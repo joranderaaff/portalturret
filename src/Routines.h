@@ -95,8 +95,7 @@ COROUTINE(searchingRoutine) {
       audio.PlaySound(7, random(1, 11));
 #endif
     }
-    float t = millis() / 1000.0;
-    uint16_t s = t * 255;
+    uint16_t s = (uint16_t)(millis() / 4);
     if (fullyOpened) {
       servos.SetRotateAngle(map(constrain(inoise8_raw(s) * 2, -100, 100), -100,
                                 100,
@@ -202,8 +201,7 @@ COROUTINE(pickedUpRoutine) {
 
   while (true) {
     if (fullyOpened) {
-      float t = millis() / 1000.0 * 5.0;
-      uint16_t s = t * 255;
+      uint16_t s = (uint16_t)(millis() / 4 * 5);
       servos.SetRotateAngle(map(constrain(inoise8_raw(s) * 2, -100, 100), -100,
                                 100,
                                 settings.centerAngle - settings.maxRotation,
